@@ -6,14 +6,14 @@ import AuctionCard from "../../components/auctions/auction-card";
 export default function Auctions() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-row justify-between items-center">
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold">Auctions</h1>
           <p className="text-gray-600 mb-4">
             Browse through our latest auctions and find your next favorite item.
           </p>
         </div>
-        <Select>
+        <Select onValueChange={(value: string) => console.log(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
