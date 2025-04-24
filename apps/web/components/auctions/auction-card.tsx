@@ -20,8 +20,8 @@ export default function AuctionCard({ image, title, description, endDate }: Auct
         <CardDescription className="line-clamp-2">{description}</CardDescription>
       </CardContent>
       <CardFooter className="px-4 flex justify-between items-center">
-        <Button variant="outline">View Auction</Button>
         <span className="text-sm text-gray-500">Ends in {endDate} </span>
+        <Button variant="outline">View Auction</Button>
       </CardFooter>
     </Card>
   );
