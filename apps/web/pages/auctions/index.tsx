@@ -1,9 +1,26 @@
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { Select, SelectItem, SelectLabel, SelectGroup, SelectContent, SelectTrigger, SelectValue } from "../../components/ui/select";
-import AuctionCard from "../../components/auctions/auction-card";
+import { Select, SelectItem, SelectGroup, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AuctionCard from "@/components/auctions/auction-card";
+import { useState } from "react";
+import { GetServerSideProps } from "next";
+import { auctionService } from "@/services/api";
 
-export default function Auctions() {
+interface Auction {
+  id: string;
+  title: string;
+  description: string;
+  startingPrice: number;
+  currentPrice: number;
+  imageUrl: string;
+  endDate: string;
+}
+
+interface AuctionsPageProps {
+  auctions: Auction[];
+}
+
+export default function AuctionsPage({ auctions }: AuctionsPageProps) {
+  const [selectedCategory, setSelectedCategory] = useState("live");
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-row justify-between items-center">
@@ -13,7 +30,7 @@ export default function Auctions() {
             Browse through our latest auctions and find your next favorite item.
           </p>
         </div>
-        <Select onValueChange={(value: string) => console.log(value)}>
+        <Select onValueChange={(value: string) => setSelectedCategory(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
@@ -29,25 +46,35 @@ export default function Auctions() {
 
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <AuctionCard
-          image="/images/watch.png"
-          title="Vintage Patek Philippe Watch Auction"
-          description="A rare vintage Patek Philippe watch up for grabs in our latest auction."
-          endDate="2 days"
-        />
-        <AuctionCard
-          image="/images/furniture.png"
-          title="Vintage Furniture Auction"
-          description="A collection of vintage furniture, for the perfect home."
-          endDate="5 days"
-        />
-        <AuctionCard
-          image="/images/painting.png"
-          title="Vintage Painting Auction"
-          description="A rare vintage painting, which is a masterpiece."
-          endDate="10 days"
-        />
+        {auctions.map((auction) => (
+          <AuctionCard
+            key={auction.id}
+            id={auction.id}
+            image={auction.imageUrl}
+            title={auction.title}
+            description={auction.description}
+            endDate={auction.endDate}
+          />
+        ))}
       </div>
     </div>
-  )
+  );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const auctions = await auctionService.getAllAuctions();
+    return {
+      props: {
+        auctions,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching auctions:', error);
+    return {
+      props: {
+        auctions: [],
+      },
+    };
+  }
+};
