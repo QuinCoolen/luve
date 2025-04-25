@@ -38,8 +38,8 @@ export default function Header() {
               <span className="sr-only">Search</span>
             </Button>
             <Button>Sign Up</Button>
-            <Button variant="outline" className="hidden md:inline-flex">
-              Log In
+            <Button variant="outline" className="hidden md:inline-flex" asChild>
+              <Link href="/login">Log In</Link>
             </Button>
           </div>
         </div>

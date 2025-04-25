@@ -18,6 +18,24 @@ interface AuctionsPageProps {
   auctions: Auction[];
 }
 
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const auctions = await auctionService.getAllAuctions();
+    return {
+      props: {
+        auctions,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching auctions:', error);
+    return {
+      props: {
+        auctions: [],
+      },
+    };
+  }
+};
+
 export default function AuctionsPage({ auctions }: AuctionsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState("live");
 
@@ -60,21 +78,3 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
     </div>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async () => {
-  try {
-    const auctions = await auctionService.getAllAuctions();
-    return {
-      props: {
-        auctions,
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching auctions:', error);
-    return {
-      props: {
-        auctions: [],
-      },
-    };
-  }
-};
