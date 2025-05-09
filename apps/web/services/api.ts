@@ -36,11 +36,4 @@ export const userService = {
       body: JSON.stringify(credentials),
     });
   },
-  
-  register: async (userData: any) => {
-    return fetchAPI('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  },
 }; 
