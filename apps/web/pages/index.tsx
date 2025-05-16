@@ -1,22 +1,15 @@
 import { useState } from "react"
 import Head from "next/head"
 import Image from "next/image"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  Gavel,
-  Search,
   ShoppingBag,
   Clock,
   Award,
   Heart,
   ChevronRight,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
 } from "lucide-react"
 
 export default function Home() {
@@ -115,7 +108,7 @@ export default function Home() {
                     className="flex transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateX(-${activeAuction * 100}%)` }}
                   >
-                    {auctions.map((auction, index) => (
+                    {auctions.map((auction) => (
                       <div key={auction.id} className="min-w-full">
                         <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
                           <Image

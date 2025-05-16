@@ -39,6 +39,11 @@ export const getServerSideProps: GetServerSideProps = async () => {
 export default function AuctionsPage({ auctions }: AuctionsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState("live");
 
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    console.log(selectedCategory);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-row justify-between items-center">
@@ -48,7 +53,7 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
             Browse through our latest auctions and find your next favorite item.
           </p>
         </div>
-        <Select onValueChange={(value: string) => setSelectedCategory(value)}>
+        <Select onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
