@@ -56,7 +56,9 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Button>Sign Up</Button>
+                <Button variant="default" className="hidden md:inline-flex" asChild>
+                  <Link href="/register">Sign Up</Link>
+                </Button>
                 <Button variant="outline" className="hidden md:inline-flex" asChild>
                   <Link href="/login">Log In</Link>
                 </Button>

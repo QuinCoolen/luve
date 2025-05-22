@@ -30,6 +30,13 @@ export const auctionService = {
 };
 
 export const userService = {
+  register: async (credentials: { userName: string; email: string; password: string }) => {
+    return fetchAPI('/api/user/register', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
+
   login: async (credentials: { email: string; password: string }) => {
     return fetchAPI('/api/auth/login', {
       method: 'POST',
