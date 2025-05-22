@@ -3,9 +3,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { userService } from "@/services/api";
+import { useContext } from "react";
+import { AuthContext } from "@/context/auth";
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useContext(AuthContext);
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -15,8 +18,8 @@ export default function Login() {
     const password = formData.get("password");
 
     try {
-      await userService.login({ email: email as string, password: password as string });
-
+      const user = await userService.login({ email: email as string, password: password as string });
+      login(user);
       router.push("/");
     } catch (error) {
       console.error(error);

@@ -36,4 +36,26 @@ export const userService = {
       body: JSON.stringify(credentials),
     });
   },
+
+  logout: async () => {
+    try {
+      await fetchAPI('/api/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  },
+
+  me: async () => {
+    try {
+      return await fetchAPI('/api/user/me', {
+        credentials: 'include',
+      });
+    } catch (error: any) {
+      if (error.message.includes('401')) {
+        return null;
+      }
+    }
+  }
 }; 
