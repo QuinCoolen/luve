@@ -2,6 +2,7 @@ import { Button } from "../ui/button";
 import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../ui/card";
 import Link from "next/link";
+import { formatTimeRemaining } from "@/lib/utils";
 
 interface AuctionCardProps {
   id: string;
@@ -12,27 +13,6 @@ interface AuctionCardProps {
 }
 
 export default function AuctionCard({ id, image, title, description, endDate }: AuctionCardProps) {
-  const formatTimeRemaining = (endDate: string) => {
-    const end = new Date(endDate);
-    const now = new Date();
-    const diff = end.getTime() - now.getTime();
-
-    if (diff <= 0) {
-      return "Auction ended";
-    }
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) {
-      return `Ends in ${days} days`;
-    } else if (hours > 0) {
-      return `Ends in ${hours} hours and ${minutes} minutes`;
-    } else {
-      return `Ends in ${minutes} minutes`;
-    }
-  };
 
   return (
     <Card className="h-full pt-0 flex flex-col">
