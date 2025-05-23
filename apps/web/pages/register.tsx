@@ -3,8 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { userService } from "@/services/api";
-import { useContext } from "react";
-import { AuthContext } from "@/context/auth";
 
 export default function Register() {
   const router = useRouter();
