@@ -80,10 +80,6 @@ export default function Auction({ auction }: { auction: Auction }) {
 
               <div className="flex items-center mt-2 space-x-4">
                 <div className="flex items-center">
-                  <Avatar className="h-6 w-6 mr-2">
-                    <AvatarImage src={"/images/avatar-placeholder.png"} alt={auction.user.userName} />
-                    <AvatarFallback>{auction.user.userName.charAt(0)}</AvatarFallback>
-                  </Avatar>
                   <span className="text-sm text-muted-foreground">
                     Seller: {auction.user.userName}
                   </span>
@@ -222,10 +218,6 @@ export default function Auction({ auction }: { auction: Auction }) {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center space-x-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={"/images/avatar-placeholder.png"} alt={auction.user.userName} />
-                        <AvatarFallback>{auction.user.userName.charAt(0)}</AvatarFallback>
-                      </Avatar>
                       <div>
                         <p className="font-medium">{auction.user.userName}</p>
                         <p className="text-sm text-muted-foreground">Seller Rating: 5/5</p>
