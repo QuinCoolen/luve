@@ -6,9 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertCircle, Clock, User } from "lucide-react";
-import { DollarSign } from "lucide-react";
+import { AlertCircle, Clock, DollarSign } from "lucide-react";
 import { formatTimeRemaining } from "@/lib/utils";
 import { useState } from "react";
 
