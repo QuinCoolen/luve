@@ -3,9 +3,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Clock, DollarSign } from "lucide-react";
 import { formatTimeRemaining } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Auction } from "@/types/auction";
 import type { User } from "@/types/user";
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  LogLevel,
+} from "@microsoft/signalr";
 
 export default function AuctionBids({  
   auction,
@@ -14,22 +19,80 @@ export default function AuctionBids({
   auction: Auction;
   user: User;
 }) {
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState(auction.currentPrice);
+  const [bidAmount, setBidAmount] = useState(auction.startingPrice + auction.currentPrice + 10);
+  const [connection, setConnection] = useState<HubConnection | null>(null);
 
   const isAuctionEnded = new Date(auction.endDate) < new Date();
 
+  useEffect(() => {
+    const newConnection = new HubConnectionBuilder()
+      .withUrl(`${process.env.NEXT_PUBLIC_API_URL}/hub`, {
+        withCredentials: true
+      })
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Information)
+      .build();
+
+    setConnection(newConnection);
+
+    let isComponentMounted = true;
+
+    newConnection.start()
+      .then(() => {
+        if (isComponentMounted) {
+          console.log("SignalR Connected");
+          return newConnection.invoke("JoinBid", auction.id);
+        }
+      })
+      .catch((err) => {
+        if (isComponentMounted) {
+          console.error("Error starting SignalR connection: ", err);
+          setError("Failed to connect to real-time updates");
+        }
+      });
+
+    // Listen for new bids
+    newConnection.on("BidPlaced", (bid) => {
+      if (bid.auctionId === auction.id) {
+        setCurrentPrice(bid.amount);
+        setBidAmount(bid.amount + 10);
+        if (bid.userId === user?.id) {
+          setSuccess("Your bid was placed successfully!");
+          setTimeout(() => setSuccess(null), 3000);
+        }
+      }
+    });
+
+    return () => {
+      isComponentMounted = false;
+      if (newConnection.state === "Connected") {
+        newConnection.stop();
+      }
+    };
+  }, [auction.id, user?.id]);
+
   const handleBidSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!connection || !user) return;
+
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
-  }
 
-  const [bidAmount, setBidAmount] = useState(auction.currentPrice + 10);
+    try {
+      await connection.invoke("PlaceBid", user.id, auction.id, bidAmount);
+    } catch (err) {
+      console.error("Error placing bid:", err);
+      setError("Failed to place bid. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Card>
@@ -38,7 +101,7 @@ export default function AuctionBids({
           <div className="flex items-center">
             <div>
               <p className="text-sm font-medium">Current Bid</p>
-              <p className="text-2xl font-bold">${auction.currentPrice}</p>
+              <p className="text-2xl font-bold">${currentPrice}</p>
             </div>
           </div>
 
@@ -75,7 +138,7 @@ export default function AuctionBids({
                     value={bidAmount}
                     onChange={(e) => setBidAmount(Number(e.target.value))}
                     className="pl-9"
-                    min={auction.currentPrice + 10}
+                    min={auction.startingPrice + auction.currentPrice + 10}
                     step={1}
                     required
                   />
@@ -95,7 +158,7 @@ export default function AuctionBids({
               {success && <div className="text-green-500 text-sm">Your bid was placed successfully!</div>}
 
               <p className="text-sm text-muted-foreground">
-                Enter ${auction.currentPrice + 10} or more
+                Enter ${auction.startingPrice + auction.currentPrice + 10} or more
               </p>
             </div>
           </form>
