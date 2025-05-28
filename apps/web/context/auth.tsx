@@ -1,13 +1,7 @@
 // context/auth.js
 import { createContext, useState, useEffect } from "react";
 import { userService } from "@/services/api";
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  token: string;
-}
+import { User } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
