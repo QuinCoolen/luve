@@ -8,7 +8,8 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import { AlertCircle, Clock, DollarSign } from "lucide-react";
 import { formatTimeRemaining } from "@/lib/utils";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AuthContext } from "@/context/auth";
 
 
 interface Auction {
@@ -36,6 +37,9 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
 
 export default function Auction({ auction }: { auction: Auction }) {
   const router = useRouter();
+
+  const { user } = useContext(AuthContext);
+  
   const [bidAmount, setBidAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
@@ -86,9 +90,6 @@ export default function Auction({ auction }: { auction: Auction }) {
             </div>
 
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Auction Details</CardTitle>
-              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <div className="flex items-center">
@@ -117,7 +118,8 @@ export default function Auction({ auction }: { auction: Auction }) {
                   </p>
                 </div>
               </CardContent>
-
+              
+              {user ? (
               <CardFooter className="flex flex-col items-stretch">
                 {!isAuctionEnded ? (
                   <form onSubmit={handleBidSubmit} className="w-full">
@@ -161,6 +163,13 @@ export default function Auction({ auction }: { auction: Auction }) {
                   </div>
                 )}
               </CardFooter>
+              ) : (
+                <CardFooter className="flex flex-col items-stretch">
+                  <p className="text-center text-muted-foreground py-4">
+                    Please login to place a bid
+                  </p>
+                </CardFooter>
+              )}
             </Card>
 
             <Tabs defaultValue="details">
@@ -171,9 +180,11 @@ export default function Auction({ auction }: { auction: Auction }) {
               </TabsList>
 
               <TabsContent value="details" className="space-y-4">
-                <div className="prose max-w-none">
-                  <p>{auction.description}</p>
-                </div>
+                <Card>
+                  <CardContent>
+                    <p>{auction.description}</p>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="bids">
