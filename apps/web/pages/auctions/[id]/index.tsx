@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { AuthContext } from "@/context/auth";
 import AuctionBids from "@/components/auctions/auction-bids";
 import type { Auction } from "@/types/auction";
+import type { User } from "@/types/user";
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   const { id } = params as { id: string };
@@ -20,22 +21,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
 
 export default function Auction({ auction }: { auction: Auction }) {
   const router = useRouter();
-
   const { user } = useContext(AuthContext);
-  
-  const [bidAmount, setBidAmount] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bidError, setBidError] = useState<string | null>(null);
-  const [bidSuccess, setBidSuccess] = useState(false);
-
-  const isAuctionEnded = new Date(auction.endDate) < new Date();
-
-  const handleBidSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setBidError(null);
-    setBidSuccess(false);
-  }
 
   return (
     <>
@@ -74,13 +60,7 @@ export default function Auction({ auction }: { auction: Auction }) {
 
             <AuctionBids
               auction={auction}
-              user={user}
-              isAuctionEnded={isAuctionEnded}
-              handleBidSubmit={handleBidSubmit}
-              bidAmount={bidAmount}
-              setBidAmount={setBidAmount}
-              bidError={bidError}
-              bidSuccess={bidSuccess}
+              user={user as User}
             />
 
             <Tabs defaultValue="details">

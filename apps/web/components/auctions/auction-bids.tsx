@@ -10,24 +10,26 @@ import type { User } from "@/types/user";
 export default function AuctionBids({  
   auction,
   user,
-  isAuctionEnded,
-  handleBidSubmit,
-  bidAmount,
-  setBidAmount,
-  bidError,
-  bidSuccess
 }: {
   auction: Auction;
   user: User;
-  isAuctionEnded: boolean;
-  handleBidSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  bidAmount: number;
-  setBidAmount: (value: number) => void;
-  bidError: string | null;
-  bidSuccess: boolean;
 }) {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const isAuctionEnded = new Date(auction.endDate) < new Date();
+
+  const handleBidSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+  }
+
+  const [bidAmount, setBidAmount] = useState(auction.currentPrice + 10);
 
   return (
     <Card>
@@ -83,14 +85,14 @@ export default function AuctionBids({
                 </Button>
               </div>
 
-              {bidError && (
+              {error && (
                 <div className="flex items-center text-red-500 text-sm">
                   <AlertCircle className="h-4 w-4 mr-1" />
-                  {bidError}
+                  {error}
                 </div>
               )}
 
-              {bidSuccess && <div className="text-green-500 text-sm">Your bid was placed successfully!</div>}
+              {success && <div className="text-green-500 text-sm">Your bid was placed successfully!</div>}
 
               <p className="text-sm text-muted-foreground">
                 Enter ${auction.currentPrice + 10} or more
