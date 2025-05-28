@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Clock, DollarSign } from "lucide-react";
 import { formatTimeRemaining } from "@/lib/utils";
 import { useState } from "react";
-import { Auction } from "../../types/auction";
+import type { Auction } from "@/types/auction";
+import type { User } from "@/types/user";
 
 export default function AuctionBids({  
   auction,
@@ -17,7 +18,7 @@ export default function AuctionBids({
   bidSuccess
 }: {
   auction: Auction;
-  user: any;
+  user: User;
   isAuctionEnded: boolean;
   handleBidSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   bidAmount: number;
