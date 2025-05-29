@@ -10,6 +10,7 @@ import { AuthContext } from "@/context/auth";
 import AuctionBids from "@/components/auctions/auction-bids";
 import type { Auction } from "@/types/auction";
 import type { User } from "@/types/user";
+import { User as UserIcon } from "lucide-react";
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   const { id } = params as { id: string };
@@ -82,30 +83,32 @@ export default function Auction({ auction }: { auction: Auction }) {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle>Bid History</CardTitle>
-                    <CardDescription>0 bids placed</CardDescription>
+                    <CardDescription>{auction.bids.length} bids placed</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* {auction.bids.length > 0 ? (
+                      {auction.bids.length > 0 ? (
                         <div className="space-y-2">
-                          {auction.bids.map((bid) => (
-                            <div key={bid.id} className="flex justify-between items-center py-2 border-b last:border-0">
-                              <div className="flex items-center">
-                                <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                                <span>{bid.bidderName}</span>
+                          {auction.bids
+                            .sort((a, b) => b.amount - a.amount)
+                            .map((bid) => (
+                              <div key={bid.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                                <div className="flex items-center">
+                                  <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span>{bid.user.userName}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <span className="font-medium">${bid.amount}</span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {bid.bidTime}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-4">
-                                <span className="font-medium">${bid.amount}</span>
-                                <span className="text-sm text-muted-foreground">
-                                  {new Date(bid.time).toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
                           ))}
                         </div>
-                      ) : ( */}
+                      ) : (
                         <p className="text-center text-muted-foreground py-4">No bids yet. Be the first to bid!</p>
-                      {/* )} */}
+                      )}
                     </div>
                   </CardContent>
                 </Card>
