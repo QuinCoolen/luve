@@ -45,7 +45,7 @@ export const auctionService = {
 };
 
 export const userService = {
-  register: async (credentials: { userName: string; email: string; password: string }) => {
+  register: async (credentials: { username: string; email: string; password: string }) => {
     return fetchAPI('/api/user/register', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -63,6 +63,7 @@ export const userService = {
     try {
       await fetchAPI('/api/auth/logout', {
         method: 'POST',
+        credentials: 'include',
       });
     } catch (error) {
       console.error('Error during logout:', error);

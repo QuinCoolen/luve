@@ -53,7 +53,7 @@ export default function Auction({ auction }: { auction: Auction }) {
               <div className="flex items-center mt-2 space-x-4">
                 <div className="flex items-center">
                   <span className="text-sm text-muted-foreground">
-                    Seller: {auction.user.userName}
+                    Seller: {auction.user.username}
                   </span>
                 </div>
               </div>
@@ -95,7 +95,7 @@ export default function Auction({ auction }: { auction: Auction }) {
                               <div key={bid.id} className="flex justify-between items-center py-2 border-b last:border-0">
                                 <div className="flex items-center">
                                   <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>{bid.user.userName}</span>
+                                  <span>{bid.user.username}</span>
                                 </div>
                                 <div className="flex items-center gap-4">
                                   <span className="font-medium">${bid.amount}</span>
@@ -122,7 +122,7 @@ export default function Auction({ auction }: { auction: Auction }) {
                   <CardContent className="space-y-4">
                     <div className="flex items-center space-x-4">
                       <div>
-                        <p className="font-medium">{auction.user.userName}</p>
+                        <p className="font-medium">{auction.user.username}</p>
                         <p className="text-sm text-muted-foreground">Seller Rating: 5/5</p>
                       </div>
                     </div>

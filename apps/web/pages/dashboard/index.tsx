@@ -182,7 +182,7 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Seller:</span>
-                    <span className="text-sm font-medium">{auction.user.userName}</span>
+                    <span className="text-sm font-medium">{auction.user.username}</span>
                   </div>
                 </CardContent>
 
