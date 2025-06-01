@@ -1,127 +1,80 @@
 import { useState } from "react"
-import Head from "next/head"
 import Image from "next/image"
-import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, Package, Search, Trophy, Eye, MessageSquare } from "lucide-react"
-
-// Mock data for won auctions
-const wonAuctions = [
-  {
-    id: 1,
-    title: "Vintage Rolex Submariner",
-    description: "1960s Rolex Submariner in excellent condition",
-    finalBid: 15750,
-    dateWon: "2024-01-15",
-    status: "completed",
-    image: "/images/watch.png",
-    category: "Watches",
-    seller: "TimepieceMaster",
-    shippingStatus: "delivered",
-  },
-  {
-    id: 2,
-    title: "Original iPhone (2007) - Sealed",
-    description: "First generation iPhone, factory sealed",
-    finalBid: 8500,
-    dateWon: "2024-01-10",
-    status: "payment_pending",
-    image: "/images/iphone.png",
-    category: "Electronics",
-    seller: "TechCollector",
-    shippingStatus: "pending",
-  },
-  {
-    id: 3,
-    title: "1952 Mickey Mantle Baseball Card",
-    description: "PSA Grade 8 condition",
-    finalBid: 12300,
-    dateWon: "2024-01-08",
-    status: "completed",
-    image: "/images/baseball.png",
-    category: "Sports Cards",
-    seller: "CardKing",
-    shippingStatus: "shipped",
-  },
-  {
-    id: 4,
-    title: "Antique Persian Rug",
-    description: "Hand-woven 19th century Persian rug",
-    finalBid: 3200,
-    dateWon: "2024-01-05",
-    status: "completed",
-    image: "/images/rug.png",
-    category: "Antiques",
-    seller: "RugMaster",
-    shippingStatus: "delivered",
-  },
-  {
-    id: 5,
-    title: "Signed Beatles Vinyl Record",
-    description: "Abbey Road signed by all four members",
-    finalBid: 25000,
-    dateWon: "2024-01-03",
-    status: "completed",
-    image: "/images/vinyl.png",
-    category: "Music",
-    seller: "VinylVault",
-    shippingStatus: "delivered",
-  },
-]
+import { auctionService } from "@/services/api"
+import { Auction } from "@/types/auction"
+import { GetServerSidePropsContext } from "next"
+import { useRouter } from "next/navigation"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "completed":
+    case "Paid":
       return "bg-green-100 text-green-800"
-    case "payment_pending":
+    case "PaymentPending":
       return "bg-yellow-100 text-yellow-800"
-    case "shipping":
+    case "NotFinished":
       return "bg-blue-100 text-blue-800"
+    case "Unpaid":
+      return "bg-red-100 text-red-800"
     default:
       return "bg-gray-100 text-gray-800"
   }
 }
 
-const getShippingStatusColor = (status: string) => {
-  switch (status) {
-    case "delivered":
-      return "bg-green-100 text-green-800"
-    case "shipped":
-      return "bg-blue-100 text-blue-800"
-    case "pending":
-      return "bg-yellow-100 text-yellow-800"
-    default:
-      return "bg-gray-100 text-gray-800"
+
+export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  try {
+    const auctions = await auctionService.getMyAuctions(context.req.headers.cookie || '');
+    return {
+      props: {
+        auctions,
+      },
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+    }
+    return {
+      props: {
+        auctions: [],
+      },
+    }
   }
 }
 
-export default function Dashboard() {
+export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const router = useRouter()
 
-  const filteredAuctions = wonAuctions.filter((auction) => {
+  const filteredAuctions = auctions.filter((auction) => {
     const matchesSearch =
-      auction.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      auction.category.toLowerCase().includes(searchTerm.toLowerCase())
+      auction.title.toLowerCase().includes(searchTerm.toLowerCase())
 
     if (activeTab === "all") return matchesSearch
-    if (activeTab === "pending") return matchesSearch && auction.status === "payment_pending"
-    if (activeTab === "completed") return matchesSearch && auction.status === "completed"
+    if (activeTab === "paymentpending") return matchesSearch && auction.status === "PaymentPending"
+    if (activeTab === "paid") return matchesSearch && auction.status === "Paid"
+    if (activeTab === "notfinished") return matchesSearch && auction.status === "NotFinished"
+    if (activeTab === "unpaid") return matchesSearch && auction.status === "Unpaid"
+
 
     return matchesSearch
   })
 
-  const totalWon = wonAuctions.length
-  const totalValue = wonAuctions.reduce((sum, auction) => sum + auction.finalBid, 0)
-  const pendingPayments = wonAuctions.filter((a) => a.status === "payment_pending").length
+  const totalWon = auctions.length
+  const totalValue = auctions.reduce((sum, auction) => sum + auction.currentPrice, 0)
+  const pendingPayments = auctions.filter((a) => a.status === "PaymentPending").length
 
   return (
     <>
-
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Page Header */}
@@ -179,13 +132,18 @@ export default function Dashboard() {
                 />
               </div>
 
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-                <TabsList>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="pending">Pending Payment</TabsTrigger>
-                  <TabsTrigger value="completed">Completed</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a tab" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="notfinished">Not Finished</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                  <SelectItem value="paymentpending">Pending Payment</SelectItem>
+                  <SelectItem value="paid">Completed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -195,7 +153,7 @@ export default function Dashboard() {
               <Card key={auction.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <Image
-                    src={auction.image || "/placeholder.svg"}
+                    src={auction.imageUrl || "/placeholder.svg"}
                     alt={auction.title}
                     width={300}
                     height={200}
@@ -214,34 +172,27 @@ export default function Dashboard() {
                 <CardContent className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Winning Bid:</span>
-                    <span className="text-lg font-bold text-green-600">${auction.finalBid.toLocaleString()}</span>
+                    <span className="text-lg font-bold text-green-600">${auction.currentPrice.toLocaleString()}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Date Won:</span>
-                    <span className="text-sm">{auction.dateWon}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Shipping:</span>
-                    <Badge className={getShippingStatusColor(auction.shippingStatus)}>
-                      {auction.shippingStatus.toUpperCase()}
-                    </Badge>
+                    <span className="text-sm">{new Date(auction.endDate).toUTCString()}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Seller:</span>
-                    <span className="text-sm font-medium">{auction.seller}</span>
+                    <span className="text-sm font-medium">{auction.user.userName}</span>
                   </div>
                 </CardContent>
 
                 <CardFooter className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button onClick={() => router.push(`/auctions/${auction.id}`)} variant="outline" size="sm" className="flex-1">
                     <Eye className="h-4 w-4 mr-1" />
                     View Details
                   </Button>
 
-                  {auction.status === "payment_pending" ? (
+                  {auction.status === "Unpaid" ? (
                     <Button size="sm" className="flex-1">
                       Pay Now
                     </Button>

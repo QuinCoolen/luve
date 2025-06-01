@@ -9,7 +9,6 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -27,6 +26,22 @@ export const auctionService = {
   getAuctionById: async (id: string) => {
     return fetchAPI(`/api/auctions/${id}`);
   },
+
+  getMyAuctions: async (cookie?: string) => {
+    try {
+      return await fetchAPI('/api/auctions/user', {
+        credentials: 'include',
+        headers: cookie ? {
+          Cookie: cookie
+        } : undefined
+      });
+    } catch (error: any) {
+      if (error.message.includes('401')) {
+        return [];
+      }
+      throw error;
+    }
+  }
 };
 
 export const userService = {

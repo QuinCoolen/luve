@@ -6,6 +6,8 @@ export interface Auction {
   description: string;
   startingPrice: number;
   currentPrice: number;
+  increment: number;
+  status: string;
   imageUrl: string;
   endDate: string;
   user: User;
