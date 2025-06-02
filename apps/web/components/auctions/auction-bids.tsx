@@ -77,7 +77,7 @@ export default function AuctionBids({
         newConnection.stop();
       }
     };
-  }, [auction.id, user?.id]);
+  }, [auction.id, user]);
 
   const handleBidSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

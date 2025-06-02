@@ -34,9 +34,9 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
 
-    if (value === "live") {
+    if (selectedCategory === "live") {
       setFilteredAuctions(auctions.filter((auction) => auction.status === "NotFinished"));
-    } else if (value === "past") {
+    } else if (selectedCategory === "past") {
       setFilteredAuctions(auctions.filter((auction) => auction.status === "Unpaid"));
     }
   };
