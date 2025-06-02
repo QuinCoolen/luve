@@ -3,16 +3,7 @@ import AuctionCard from "@/components/auctions/auction-card";
 import { useState } from "react";
 import { GetServerSideProps } from "next";
 import { auctionService } from "@/services/api";
-
-interface Auction {
-  id: string;
-  title: string;
-  description: string;
-  startingPrice: number;
-  currentPrice: number;
-  imageUrl: string;
-  endDate: string;
-}
+import { Auction } from "@/types/auction";
 
 interface AuctionsPageProps {
   auctions: Auction[];
@@ -38,10 +29,16 @@ export const getServerSideProps: GetServerSideProps = async () => {
 
 export default function AuctionsPage({ auctions }: AuctionsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState("live");
+  const [filteredAuctions, setFilteredAuctions] = useState(auctions);
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
-    console.log(selectedCategory);
+
+    if (value === "live") {
+      setFilteredAuctions(auctions.filter((auction) => auction.status === "NotFinished"));
+    } else if (value === "past") {
+      setFilteredAuctions(auctions.filter((auction) => auction.status === "Unpaid"));
+    }
   };
 
   return (
@@ -60,7 +57,6 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
           <SelectContent>
             <SelectGroup>
               <SelectItem value="live">Live</SelectItem>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
               <SelectItem value="past">Past</SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -69,7 +65,7 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
 
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {auctions.map((auction) => (
+        {filteredAuctions.map((auction) => (
           <AuctionCard
             key={auction.id}
             id={auction.id}
