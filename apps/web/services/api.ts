@@ -56,6 +56,7 @@ export const userService = {
     return fetchAPI('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
+      credentials: 'include',
     });
   },
 
