@@ -23,7 +23,7 @@ export default function AuctionBids({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [currentPrice, setCurrentPrice] = useState(auction.currentPrice);
-  const [bidAmount, setBidAmount] = useState(auction.startingPrice + auction.currentPrice + 10);
+  const [bidAmount, setBidAmount] = useState(auction.currentPrice + auction.increment);
   const [connection, setConnection] = useState<HubConnection | null>(null);
 
   const isAuctionEnded = new Date(auction.endDate) < new Date();
@@ -125,7 +125,7 @@ export default function AuctionBids({
 
         <div>
           <p className="text-sm text-muted-foreground">
-            Started at ${auction.startingPrice} • Minimum increment: $10
+            Started at ${auction.startingPrice} • Minimum increment: ${auction.increment}
           </p>
         </div>
       </CardContent>
@@ -143,8 +143,8 @@ export default function AuctionBids({
                     value={bidAmount}
                     onChange={(e) => setBidAmount(Number(e.target.value))}
                     className="pl-9"
-                    min={auction.startingPrice + auction.currentPrice + 10}
-                    step={1}
+                    min={auction.currentPrice + auction.increment}
+                    step={auction.increment}
                     required
                   />
                 </div>
@@ -163,7 +163,7 @@ export default function AuctionBids({
               {success && <div className="text-green-500 text-sm">Your bid was placed successfully!</div>}
 
               <p className="text-sm text-muted-foreground">
-                Enter ${auction.startingPrice + auction.currentPrice + 10} or more
+                Enter ${currentPrice + auction.increment} or more
               </p>
             </div>
           </form>
