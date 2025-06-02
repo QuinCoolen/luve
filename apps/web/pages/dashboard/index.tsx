@@ -171,7 +171,7 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
 
                 <CardHeader>
                   <CardTitle className="text-lg line-clamp-1">{auction.title}</CardTitle>
-                  <p className="text-sm text-gray-600 line-clamp-2">{auction.description}</p>
+                  <p className="text-sm text-gray-600 line-clamp-1">{auction.description}</p>
                 </CardHeader>
 
                 <CardContent className="space-y-3">
