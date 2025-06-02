@@ -28,6 +28,15 @@ const getStatusColor = (status: string) => {
 
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  if (!context.req.headers.cookie) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    }
+  }
+  
   try {
     const auctions = await auctionService.getMyAuctions(context.req.headers.cookie || '');
     return {
@@ -77,13 +86,11 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
     <>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Auctions</h1>
             <p className="text-gray-600">Manage and track auction you've bet on.</p>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -119,7 +126,6 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
             </Card>
           </div>
 
-          {/* Search and Filters */}
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
               <div className="relative w-full sm:w-96">
@@ -147,7 +153,6 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
             </div>
           </div>
 
-          {/* Auctions Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAuctions.map((auction) => (
               <Card key={auction.id} className="overflow-hidden hover:shadow-lg transition-shadow">

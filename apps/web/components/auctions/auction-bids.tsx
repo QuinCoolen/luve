@@ -17,10 +17,9 @@ export default function AuctionBids({
   user,
 }: {
   auction: Auction;
-  user: User;
+  user: User | null;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [currentPrice, setCurrentPrice] = useState(auction.currentPrice);
@@ -30,6 +29,10 @@ export default function AuctionBids({
   const isAuctionEnded = new Date(auction.endDate) < new Date();
 
   useEffect(() => {
+    if (!user) {
+      return;
+    }
+
     const newConnection = new HubConnectionBuilder()
       .withUrl(`${process.env.NEXT_PUBLIC_API_URL}/hub`, {
         withCredentials: true
@@ -61,7 +64,7 @@ export default function AuctionBids({
       if (bid.auctionId === auction.id) {
         setCurrentPrice(bid.amount);
         setBidAmount(bid.amount + 10);
-        if (bid.userId === user?.id) {
+        if (bid.userId === user.id) {
           setSuccess("Your bid was placed successfully!");
           setTimeout(() => setSuccess(null), 3000);
         }
@@ -78,7 +81,9 @@ export default function AuctionBids({
 
   const handleBidSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!connection || !user) return;
+    if (!connection || !user){ 
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);

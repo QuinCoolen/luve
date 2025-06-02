@@ -61,7 +61,7 @@ export default function Auction({ auction }: { auction: Auction }) {
 
             <AuctionBids
               auction={auction}
-              user={user as User}
+              user={user ? user as User : null}
             />
 
             <Tabs defaultValue="details">

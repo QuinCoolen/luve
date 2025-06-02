@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Gavel, Search, LogOut } from "lucide-react";
+import { Gavel, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthContext } from "@/context/auth";
@@ -42,13 +42,13 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
-            </Button>
             {user ? (
               <>
-                <p className="text-sm font-medium capitalize">Welcome, {user.username}</p>
+                <Button asChild variant="default" size="icon" className="hidden md:flex w-fit px-4">
+                  <Link href="/dashboard">
+                    <span>Dashboard</span>
+                  </Link>
+                </Button>
                 <Button variant="outline" size="icon" className="hidden md:flex" onClick={handleLogout}>
                   <LogOut className="h-5 w-5" />
                   <span className="sr-only">Log Out</span>
