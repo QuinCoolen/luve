@@ -16,7 +16,7 @@ export default function Register() {
     const password = formData.get("password");
 
     try {
-      await userService.register({ userName: username as string, email: email as string, password: password as string });
+      await userService.register({ username: username as string, email: email as string, password: password as string });
       router.push("/login");
     } catch (error) {
       console.error(error);
