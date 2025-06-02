@@ -19,7 +19,10 @@ export default function Login() {
 
     try {
       const user = await userService.login({ email: email as string, password: password as string });
-      login(user);
+      if (!user) {
+        throw new Error("Failed to login");
+      }
+      login();
       router.push("/");
     } catch (error) {
       console.error(error);

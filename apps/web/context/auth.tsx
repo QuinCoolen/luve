@@ -6,7 +6,7 @@ import { User } from "@/types/user";
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (user: User) => void;
+  login: () => void;
   logout: () => void;
 }
 
@@ -21,15 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const login = (user: User) => {
-    setUser(user);
-  };
-
-  const logout = () => {
-    setUser(null);
-  };
-
-  useEffect(() => {
+  const getUser = () => {
     userService.me()
       .then((user) => {
         setUser(user);
@@ -41,6 +33,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => {
         setIsLoading(false);
       });
+  };
+
+  const login = () => {
+    getUser();
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  useEffect(() => {
+    getUser();
   }, []);
 
   return (
