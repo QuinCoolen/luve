@@ -35,7 +35,8 @@ export default function AuctionBids({
     setSuccess(null);
 
     try {
-      await connection.invoke("PlaceBid", user.id, auction.id, bidAmount);
+      const dateNow = new Date().toLocaleString();
+      await connection.invoke("PlaceBid", user.id, auction.id, bidAmount, dateNow);
       setSuccess("Your bid was placed successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {

@@ -20,9 +20,6 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
 
   const auction = await auctionService.getAuctionById(id as string);
 
-  console.log("serverside")
-  console.log(auction.bids);
-
   return { props: { auction } };
 };
 
@@ -33,8 +30,6 @@ export default function Auction({ auction: initialAuction }: { auction: Auction 
   const [connection, setConnection] = useState<HubConnection | null>(null);
 
   useEffect(() => {
-    console.log("clientside")
-    console.log(auction.bids);
     if (!user) {
       return;
     }
@@ -54,7 +49,6 @@ export default function Auction({ auction: initialAuction }: { auction: Auction 
     newConnection.start()
       .then(() => {
         if (isComponentMounted) {
-          console.log("SignalR Connected");
           return newConnection.invoke("JoinBid", auction.id);
         }
       })
@@ -66,8 +60,6 @@ export default function Auction({ auction: initialAuction }: { auction: Auction 
 
     // Listen for new bids
     newConnection.on("BidPlaced", (bid: Bid) => {
-      console.log("BidPlaced")
-      console.log(bid)
       if (bid.auctionId === auction.id) {
         setAuction(prevAuction => {
           const bidExists = prevAuction.bids.some(existingBid => existingBid.id === bid.id);

@@ -28,5 +28,5 @@ export const formatTimeRemaining = (endDate: string) => {
 };
 
 export const formatBidTime = (date: string) => {
-  return new Date(date).toLocaleString('en-US', { timeZone: 'Europe/Berlin' });
+  return new Date(date).toLocaleString();
 };
