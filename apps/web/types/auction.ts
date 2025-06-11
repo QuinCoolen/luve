@@ -17,7 +17,7 @@ export interface Auction {
 export interface Bid {
   id: string;
   amount: number;
-  bidTime: string;
+  time: string;
   user: User;
-  auction: Auction;
+  auctionId: string;
 }

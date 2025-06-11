@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export const formatTimeRemaining = (endDate: string) => {
@@ -25,4 +25,16 @@ export const formatTimeRemaining = (endDate: string) => {
   } else {
     return `Ends in ${minutes} minutes`;
   }
+};
+
+export const formatBidTime = (date: string) => {
+   console.log(new Date(date).getTimezoneOffset());
+   console.log(new Date(date).toLocaleString());
+   console.log(new Date(date).toLocaleString('en-US', { timeZone: 'America/New_York' }));
+   console.log(new Date(date).toLocaleString('en-US', { timeZone: 'Europe/London' }));
+   console.log(new Date(date).toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+   console.log(new Date(date).toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+   console.log(new Date(date).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+   console.log(new Date(date).toLocaleString('en-US', { timeZone: 'Europe/Madrid' }));
+   return new Date(date).toLocaleString('en-US', { timeZone: 'Europe/Berlin' });
 };

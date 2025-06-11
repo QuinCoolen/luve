@@ -3,81 +3,26 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Clock, DollarSign } from "lucide-react";
 import { formatTimeRemaining } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Auction } from "@/types/auction";
 import type { User } from "@/types/user";
-import {
-  HubConnection,
-  HubConnectionBuilder,
-  LogLevel,
-} from "@microsoft/signalr";
+import { HubConnection } from "@microsoft/signalr";
 
 export default function AuctionBids({  
   auction,
   user,
+  connection,
 }: {
   auction: Auction;
   user: User | null;
+  connection: HubConnection | null;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [currentPrice, setCurrentPrice] = useState(auction.currentPrice);
   const [bidAmount, setBidAmount] = useState(auction.currentPrice + auction.increment);
-  const [connection, setConnection] = useState<HubConnection | null>(null);
 
   const isAuctionEnded = new Date(auction.endDate) < new Date();
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    const newConnection = new HubConnectionBuilder()
-      .withUrl(`${process.env.NEXT_PUBLIC_API_URL}/hub`, {
-        withCredentials: true
-      })
-      .withAutomaticReconnect()
-      .configureLogging(LogLevel.Information)
-      .build();
-
-    setConnection(newConnection);
-
-    let isComponentMounted = true;
-
-    newConnection.start()
-      .then(() => {
-        if (isComponentMounted) {
-          console.log("SignalR Connected");
-          return newConnection.invoke("JoinBid", auction.id);
-        }
-      })
-      .catch((err) => {
-        if (isComponentMounted) {
-          console.error("Error starting SignalR connection: ", err);
-          setError("Failed to connect to real-time updates");
-        }
-      });
-
-    // Listen for new bids
-    newConnection.on("BidPlaced", (bid) => {
-      if (bid.auctionId === auction.id) {
-        setCurrentPrice(bid.amount);
-        setBidAmount(bid.amount + 10);
-        if (bid.userId === user.id) {
-          setSuccess("Your bid was placed successfully!");
-          setTimeout(() => setSuccess(null), 3000);
-        }
-      }
-    });
-
-    return () => {
-      isComponentMounted = false;
-      if (newConnection.state === "Connected") {
-        newConnection.stop();
-      }
-    };
-  }, [auction.id, user]);
 
   const handleBidSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,6 +36,8 @@ export default function AuctionBids({
 
     try {
       await connection.invoke("PlaceBid", user.id, auction.id, bidAmount);
+      setSuccess("Your bid was placed successfully!");
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Error placing bid:", err);
       setError("Failed to place bid. Please try again.");
@@ -106,7 +53,7 @@ export default function AuctionBids({
           <div className="flex items-center">
             <div>
               <p className="text-sm font-medium">Current Bid</p>
-              <p className="text-2xl font-bold">${currentPrice}</p>
+              <p className="text-2xl font-bold">${auction.currentPrice}</p>
             </div>
           </div>
 
@@ -163,7 +110,7 @@ export default function AuctionBids({
               {success && <div className="text-green-500 text-sm">Your bid was placed successfully!</div>}
 
               <p className="text-sm text-muted-foreground">
-                Enter ${currentPrice + auction.increment} or more
+                Enter ${auction.currentPrice + auction.increment} or more
               </p>
             </div>
           </form>
