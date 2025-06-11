@@ -85,8 +85,8 @@ export const userService = {
 };
 
 export const checkoutService = {
-  createCheckoutSession: async () => {
-    const response = await fetch(`${API_URL}/create-checkout-session/`, {
+  createCheckoutSession: async (auctionId: number) => {
+    const response = await fetch(`${API_URL}/create-checkout-session?auctionId=${auctionId}`, {
       method: 'POST',
       credentials: 'include',
     });

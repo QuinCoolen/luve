@@ -101,9 +101,10 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
   const totalValue = auctions.reduce((sum, auction) => sum + auction.currentPrice, 0)
   const pendingPayments = auctions.filter((a) => a.status === "PaymentPending").length
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (auctionId: number) => {
     try {
-      const response = await checkoutService.createCheckoutSession()
+      console.log(auctionId)
+      const response = await checkoutService.createCheckoutSession(auctionId)
       if (response.redirectUrl) {
         window.location.href = response.redirectUrl
       }
@@ -250,7 +251,7 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
                   </Button>
 
                   {auction.status === "Unpaid" ? (
-                    <Button onClick={handleCheckout} size="sm" className="flex-1">
+                    <Button onClick={() => handleCheckout(auction.id)} size="sm" className="flex-1">
                       Checkout
                     </Button>
                   ) : (

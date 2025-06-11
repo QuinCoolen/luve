@@ -1,7 +1,7 @@
 import { User } from "./user";
 
 export interface Auction {
-  id: string;
+  id: number;
   title: string;
   description: string;
   startingPrice: number;
@@ -15,9 +15,9 @@ export interface Auction {
 }
 
 export interface Bid {
-  id: string;
+  id: number;
   amount: number;
   time: string;
   user: User;
-  auctionId: string;
+  auctionId: number;
 }
