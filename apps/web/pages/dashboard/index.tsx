@@ -1,11 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { DollarSign, Package, Search, Trophy, Eye, MessageSquare } from "lucide-react"
-import { auctionService } from "@/services/api"
+import { DollarSign, Package, Search, Trophy, Eye, MessageSquare, CheckCircle, X } from "lucide-react"
+import { auctionService, checkoutService } from "@/services/api"
 import { Auction } from "@/types/auction"
 import { GetServerSidePropsContext } from "next"
 import { useRouter } from "next/navigation"
@@ -62,7 +62,26 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    // Check if user returned from successful payment
+    const urlParams = new URLSearchParams(window.location.search)
+    const success = urlParams.get('success')
+    
+    if (success === 'true') {
+      setShowSuccessMessage(true)
+      // Remove the success parameter from URL
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+      
+      // Auto-hide the message after 5 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false)
+      }, 5000)
+    }
+  }, [])
 
   const filteredAuctions = auctions.filter((auction) => {
     const matchesSearch =
@@ -82,10 +101,43 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
   const totalValue = auctions.reduce((sum, auction) => sum + auction.currentPrice, 0)
   const pendingPayments = auctions.filter((a) => a.status === "PaymentPending").length
 
+  const handleCheckout = async () => {
+    try {
+      const response = await checkoutService.createCheckoutSession()
+      if (response.redirectUrl) {
+        window.location.href = response.redirectUrl
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+    }
+  }
+
   return (
     <>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {showSuccessMessage && (
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
+                <div>
+                  <h3 className="text-sm font-medium text-green-800">Payment Successful!</h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Your order has been processed and is on its way. You'll receive a confirmation email shortly.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSuccessMessage(false)}
+                  className="ml-auto text-green-600 hover:text-green-800"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Auctions</h1>
             <p className="text-gray-600">Manage and track auction you&apos;ve bet on.</p>
@@ -198,8 +250,8 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
                   </Button>
 
                   {auction.status === "Unpaid" ? (
-                    <Button size="sm" className="flex-1">
-                      Pay Now
+                    <Button onClick={handleCheckout} size="sm" className="flex-1">
+                      Checkout
                     </Button>
                   ) : (
                     <Button variant="outline" size="sm" className="flex-1">

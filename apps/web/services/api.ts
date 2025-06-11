@@ -82,4 +82,20 @@ export const userService = {
       }
     }
   }
-}; 
+};
+
+export const checkoutService = {
+  createCheckoutSession: async () => {
+    const response = await fetch(`${API_URL}/create-checkout-session/`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return { redirectUrl: data.url };
+  }
+};
