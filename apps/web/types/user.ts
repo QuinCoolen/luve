@@ -14,3 +14,10 @@ export class ValidationError extends Error {
 
   errors: { [key: string]: string[] };
 }
+
+export class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotFoundError";
+  }
+}

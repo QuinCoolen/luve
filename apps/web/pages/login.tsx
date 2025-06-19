@@ -3,12 +3,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { userService } from "@/services/api";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "@/context/auth";
+import { NotFoundError, ValidationError } from "@/types/user";
 
 export default function Login() {
   const router = useRouter();
   const { login } = useContext(AuthContext);
+  const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,8 +26,14 @@ export default function Login() {
       }
       login();
       router.push("/");
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      if (error instanceof ValidationError) {
+        setErrors(error.errors);
+      } else if (error instanceof NotFoundError) {
+        setErrors({ NotFound: [error.message] });
+      } else {
+        console.error(error);
+      }
     }
   }
 
@@ -37,8 +45,17 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="flex flex-col items-center justify-center gap-4">
+            {errors.NotFound && errors.NotFound.map((error, index) => (
+              <p key={index} className="text-red-500">{error}</p>
+            ))}
             <Input type="email" placeholder="Email" name="email" required />
+            {errors.Email && errors.Email.map((error, index) => (
+              <p key={index} className="text-red-500">{error}</p>
+            ))}
             <Input type="password" placeholder="Password" name="password" required />
+            {errors.Password && errors.Password.map((error, index) => (
+              <p key={index} className="text-red-500">{error}</p>
+            ))}
             <Button className="place-self-end" type="submit">Login</Button>
           </form>
         </CardContent>
