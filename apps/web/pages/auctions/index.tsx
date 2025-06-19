@@ -69,7 +69,7 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
           <AuctionCard
             key={auction.id}
             id={auction.id}
-            image={auction.imageUrl}
+            imageUrl={auction.imageUrl}
             title={auction.title}
             description={auction.description}
             endDate={auction.endDate}

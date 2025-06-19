@@ -5,19 +5,19 @@ import Link from "next/link";
 import { formatTimeRemaining } from "@/lib/utils";
 
 interface AuctionCardProps {
-  id: string;
-  image: string;
+  id: number;
+  imageUrl: string;
   title: string;
   description: string;
   endDate: string;
 }
 
-export default function AuctionCard({ id, image, title, description, endDate }: AuctionCardProps) {
+export default function AuctionCard({ id, imageUrl, title, description, endDate }: AuctionCardProps) {
 
   return (
     <Card className="h-full pt-0 flex flex-col">
       <CardHeader className="relative h-72">
-        <Image src={image} alt={title} fill className="object-cover rounded-t-lg" />
+        <Image src={imageUrl} alt={title} fill className="object-cover rounded-t-lg" />
       </CardHeader>
       <CardContent className="px-4 flex-grow">
         <CardTitle>{title}</CardTitle>

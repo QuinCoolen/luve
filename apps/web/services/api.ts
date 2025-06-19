@@ -1,3 +1,5 @@
+import { ValidationError } from "@/types/user";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
@@ -6,14 +8,27 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     ...options.headers,
   };
 
+  console.log("Before fetch");
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
   });
 
+  console.log("Before error check");
+
+  if (response.status === 400) {
+    console.log("Error check");
+    const error = await response.json();
+    throw new ValidationError(error.message, error.errors);
+  }
+
   if (!response.ok) {
+    console.log("API error");
     throw new Error(`API error: ${response.statusText}`);
   }
+
+  console.log("Response");
 
   return response.json();
 }
