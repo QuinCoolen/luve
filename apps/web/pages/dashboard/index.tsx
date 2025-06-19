@@ -66,20 +66,13 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user returned from successful payment
     const urlParams = new URLSearchParams(window.location.search)
     const success = urlParams.get('success')
     
     if (success === 'true') {
       setShowSuccessMessage(true)
-      // Remove the success parameter from URL
       const newUrl = window.location.pathname
       window.history.replaceState({}, '', newUrl)
-      
-      // Auto-hide the message after 5 seconds
-      setTimeout(() => {
-        setShowSuccessMessage(false)
-      }, 5000)
     }
   }, [])
 
@@ -124,7 +117,7 @@ export default function Dashboard({ auctions }: { auctions:  Auction[] }) {
                 <div>
                   <h3 className="text-sm font-medium text-green-800">Payment Successful!</h3>
                   <p className="text-sm text-green-700 mt-1">
-                    Your order has been processed and is on its way. You'll receive a confirmation email shortly.
+                    Your order has been processed and is on its way. You&apos;ll receive a confirmation email shortly.
                   </p>
                 </div>
                 <Button
