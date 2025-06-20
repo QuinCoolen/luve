@@ -26,7 +26,7 @@ export default function Login() {
       }
       login();
       router.push("/");
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof ValidationError) {
         setErrors(error.errors);
       } else if (error instanceof NotFoundError) {

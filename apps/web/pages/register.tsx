@@ -21,7 +21,7 @@ export default function Register() {
     try {
       await userService.register({ username: username as string, email: email as string, password: password as string });
       router.push("/login");
-    } catch (error: any) {
+    } catch (error) {
       console.log("Error");
       if (error instanceof ValidationError) {
         console.log("ValidationError");
