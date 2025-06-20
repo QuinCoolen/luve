@@ -100,18 +100,18 @@ export default function Footer() {
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Subscribe</h3>
               <p className="text-sm text-muted-foreground">Stay updated with new auctions and exclusive offers.</p>
-              <form className="space-y-2">
+              <div className="space-y-2">
                 <div className="relative">
+                  <span className="text-sm text-muted-foreground">Email: </span>
                   <input
-                    type="email"
-                    placeholder="Enter your email"
+                    type="text"
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
                 <Button type="submit" className="w-full">
                   Subscribe
                 </Button>
-              </form>
+              </div>
             </div>
           </div>
 

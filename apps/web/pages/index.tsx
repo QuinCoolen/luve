@@ -11,6 +11,7 @@ import {
   Heart,
   ChevronRight,
 } from "lucide-react"
+import Link from "next/link"
 
 export default function Home() {
   const [activeAuction, setActiveAuction] = useState(0)
@@ -93,8 +94,10 @@ export default function Home() {
                   Bid on exclusive luxury items, antiques, art, and collectibles from verified sellers around the world.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Explore Auctions
+                  <Button size="lg" asChild className="w-full sm:w-auto">
+                    <Link href="/auctions">
+                      Explore Auctions
+                    </Link>
                   </Button>
                   <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     How It Works
@@ -176,8 +179,10 @@ export default function Home() {
                     <h3 className="text-xl font-bold mt-2">{category.title}</h3>
                     <p className="text-muted-foreground mt-2">{category.description}</p>
                     <p className="text-sm font-medium mt-4">{category.items} items</p>
-                    <Button variant="link" className="mt-2">
-                      Browse Category <ChevronRight className="h-4 w-4 ml-1" />
+                    <Button variant="link" asChild className="mt-2">
+                      <Link href="/auctions">
+                        Browse Category <ChevronRight className="h-4 w-4 ml-1" />
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -212,8 +217,10 @@ export default function Home() {
                   </li>
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Create Free Account
+                  <Button size="lg" asChild className="w-full sm:w-auto">
+                    <Link href="/register">
+                      Create Free Account
+                    </Link>
                   </Button>
                   <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     Learn More
