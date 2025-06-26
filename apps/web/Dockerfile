@@ -12,6 +12,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+ENV NEXT_PUBLIC_API_URL=http://backend:8080
+
 # Build the application
 RUN npm run build
 
@@ -22,7 +24,6 @@ WORKDIR /app
 
 # Set environment to production
 ENV NODE_ENV=production
-ENV NEXT_PUBLIC_API_URL=http://backend:8080
 
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
