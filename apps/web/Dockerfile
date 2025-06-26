@@ -12,7 +12,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-ENV NEXT_PUBLIC_API_URL=http://backend:8080
+ENV NEXT_PUBLIC_API_URL=http://localhost:8081
 
 # Build the application
 RUN npm run build
