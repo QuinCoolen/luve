@@ -34,10 +34,12 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
 
-    if (selectedCategory === "live") {
-      setFilteredAuctions(auctions.filter((auction) => auction.status === "NotFinished"));
-    } else if (selectedCategory === "past") {
-      setFilteredAuctions(auctions.filter((auction) => auction.status === "Unpaid"));
+    if (value === "all") {
+      setFilteredAuctions(auctions);
+    } else if (value === "live") {
+      setFilteredAuctions(auctions.filter(auction => new Date(auction.endDate) > new Date()));
+    } else if (value === "past") {
+      setFilteredAuctions(auctions.filter(auction => new Date(auction.endDate) <= new Date()));
     }
   };
 
@@ -56,6 +58,7 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="live">Live</SelectItem>
               <SelectItem value="past">Past</SelectItem>
             </SelectGroup>
