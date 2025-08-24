@@ -24,12 +24,12 @@ export default function AuctionBids({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [agree, setAgree] = useState(false);
   const [bidAmount, setBidAmount] = useState(auction.currentPrice + auction.increment);
 
   const isAuctionEnded = new Date(auction.endDate) < new Date();
 
   const handleBidSubmit = async () => {
-    console.log("test")
     if (!connection || !user){ 
       return;
     }
@@ -158,7 +158,7 @@ export default function AuctionBids({
                       </CardContent>
                     </Card>
                     <div className="flex items-center gap-2 mx-5">
-                      <Checkbox id="agree" />
+                      <Checkbox id="agree" onCheckedChange={() => setAgree(!agree)} />
                       <Label htmlFor="agree">I understand and agree that this bid is binding, non-retractable, and non-appealable. I commit to purchasing this item if I am the winning bidder.</Label>
                     </div>
                     <AlertDialogFooter>
@@ -168,7 +168,7 @@ export default function AuctionBids({
                         </Button>
                       </AlertDialogCancel>
                       <AlertDialogAction asChild>
-                      <Button onClick={() => handleBidSubmit()} disabled={isSubmitting}>
+                      <Button onClick={() => handleBidSubmit()} disabled={isSubmitting || !agree}>
                         {isSubmitting ? "Placing Bid..." : "Place Bid"}
                       </Button>
                     </AlertDialogAction>
