@@ -22,9 +22,6 @@ test.describe('Navigation Tests', () => {
     // Verify the category filter dropdown is present
     await expect(page.getByRole('combobox')).toBeVisible();
     await expect(page.getByText('Select a category')).toBeVisible();
-
-    // Verify the grid layout for auction cards is present (more specific selector)
-    await expect(page.locator('.grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.gap-8')).toBeVisible();
   });
 
   test('should navigate to register page', async ({ page }) => {

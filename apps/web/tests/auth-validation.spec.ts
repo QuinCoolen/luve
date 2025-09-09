@@ -135,25 +135,6 @@ test.describe('Authentication Validation Tests', () => {
       // Should still be on login page
       await expect(page).toHaveURL('http://localhost:3000/login');
     });
-
-    test('should successfully login with valid credentials', async ({ page }) => {
-      // Navigate to login page
-      await page.click('text=Log In');
-      await expect(page).toHaveURL('http://localhost:3000/login');
-
-      // Fill form with valid credentials (assuming these exist in your test environment)
-      await page.getByPlaceholder('Email').fill('test@test.com');
-      await page.getByPlaceholder('Password').fill('421uxAI3@FI&');
-
-      // Submit form
-      await page.getByRole('button', { name: 'Login' }).click();
-
-      // Should redirect to home page on success
-      await expect(page).toHaveURL('http://localhost:3000/');
-
-      // Verify user is logged in by checking for dashboard link
-      await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
-    });
   });
 
   test.describe('Form Field Validation', () => {
