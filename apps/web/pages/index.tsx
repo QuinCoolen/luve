@@ -1,20 +1,14 @@
-import { useState } from "react"
-import Head from "next/head"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import {
-  ShoppingBag,
-  Clock,
-  Award,
-  Heart,
-  ChevronRight,
-} from "lucide-react"
-import Link from "next/link"
+import { useState } from "react";
+import Head from "next/head";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingBag, Clock, Award, Heart, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
-  const [activeAuction, setActiveAuction] = useState(0)
+  const [activeAuction, setActiveAuction] = useState(0);
 
   const auctions = [
     {
@@ -41,7 +35,7 @@ export default function Home() {
       image: "/images/furniture.png?height=400&width=600",
       bids: 24,
     },
-  ]
+  ];
 
   const categories = [
     {
@@ -52,23 +46,26 @@ export default function Home() {
     },
     {
       title: "Fine Art",
-      description: "Explore paintings, sculptures, and collectibles from famous artists",
+      description:
+        "Explore paintings, sculptures, and collectibles from famous artists",
       icon: <Heart className="h-10 w-10 mb-4" />,
       items: "1,800+",
     },
     {
       title: "Antiques",
-      description: "Browse rare antiques with historical significance and unique stories",
+      description:
+        "Browse rare antiques with historical significance and unique stories",
       icon: <Award className="h-10 w-10 mb-4" />,
       items: "3,200+",
     },
     {
       title: "Jewelry",
-      description: "Find exquisite jewelry pieces from different eras and designers",
+      description:
+        "Find exquisite jewelry pieces from different eras and designers",
       icon: <ShoppingBag className="h-10 w-10 mb-4" />,
       items: "1,950+",
     },
-  ]
+  ];
 
   return (
     <>
@@ -91,15 +88,18 @@ export default function Home() {
                   Discover Rare Treasures at Your Fingertips
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  Bid on exclusive luxury items, antiques, art, and collectibles from verified sellers around the world.
+                  Bid on exclusive luxury items, antiques, art, and collectibles
+                  from verified sellers around the world.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <Button size="lg" asChild className="w-full sm:w-auto">
-                    <Link href="/auctions">
-                      Explore Auctions
-                    </Link>
+                    <Link href="/auctions">Explore Auctions</Link>
                   </Button>
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto"
+                  >
                     How It Works
                   </Button>
                 </div>
@@ -109,7 +109,9 @@ export default function Home() {
                 <div className="relative overflow-hidden rounded-xl">
                   <div
                     className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${activeAuction * 100}%)` }}
+                    style={{
+                      transform: `translateX(-${activeAuction * 100}%)`,
+                    }}
                   >
                     {auctions.map((auction) => (
                       <div key={auction.id} className="min-w-full">
@@ -122,14 +124,23 @@ export default function Home() {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                            <h3 className="text-xl font-bold">{auction.title}</h3>
+                            <h3 className="text-xl font-bold">
+                              {auction.title}
+                            </h3>
                             <div className="flex justify-between items-center mt-2">
                               <div>
-                                <p className="text-sm opacity-90">Current Bid</p>
-                                <p className="text-lg font-bold">{auction.currentBid}</p>
+                                <p className="text-sm opacity-90">
+                                  Current Bid
+                                </p>
+                                <p className="text-lg font-bold">
+                                  {auction.currentBid}
+                                </p>
                               </div>
                               <div>
-                                <Badge variant="secondary" className="bg-white/20 hover:bg-white/30">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-white/20 hover:bg-white/30"
+                                >
                                   <Clock className="h-3 w-3 mr-1" />
                                   {auction.timeLeft} left
                                 </Badge>
@@ -148,7 +159,9 @@ export default function Home() {
                       key={index}
                       onClick={() => setActiveAuction(index)}
                       className={`h-2 w-2 rounded-full ${
-                        activeAuction === index ? "bg-primary" : "bg-muted-foreground/30"
+                        activeAuction === index
+                          ? "bg-primary"
+                          : "bg-muted-foreground/30"
                       }`}
                       aria-label={`View auction ${index + 1}`}
                     />
@@ -164,9 +177,12 @@ export default function Home() {
           <div className="container px-4 md:px-6 mx-auto">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Explore Categories</h2>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                  Explore Categories
+                </h2>
                 <p className="max-w-[700px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Discover thousands of unique items across our popular categories
+                  Discover thousands of unique items across our popular
+                  categories
                 </p>
               </div>
             </div>
@@ -177,11 +193,16 @@ export default function Home() {
                   <CardContent className="p-6 text-center">
                     <div className="flex justify-center">{category.icon}</div>
                     <h3 className="text-xl font-bold mt-2">{category.title}</h3>
-                    <p className="text-muted-foreground mt-2">{category.description}</p>
-                    <p className="text-sm font-medium mt-4">{category.items} items</p>
+                    <p className="text-muted-foreground mt-2">
+                      {category.description}
+                    </p>
+                    <p className="text-sm font-medium mt-4">
+                      {category.items} items
+                    </p>
                     <Button variant="link" asChild className="mt-2">
                       <Link href="/auctions">
-                        Browse Category <ChevronRight className="h-4 w-4 ml-1" />
+                        Browse Category{" "}
+                        <ChevronRight className="h-4 w-4 ml-1" />
                       </Link>
                     </Button>
                   </CardContent>
@@ -200,7 +221,8 @@ export default function Home() {
                   Ready to Find Your Next Treasure?
                 </h2>
                 <p className="text-muted-foreground md:text-xl">
-                  Join thousands of collectors and enthusiasts. Sign up today and get access to exclusive auctions.
+                  Join thousands of collectors and enthusiasts. Sign up today
+                  and get access to exclusive auctions.
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-center">
@@ -218,12 +240,15 @@ export default function Home() {
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <Button size="lg" asChild className="w-full sm:w-auto">
-                    <Link href="/register">
-                      Create Free Account
-                    </Link>
+                    <Link href="/register">Create Free Account</Link>
                   </Button>
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    Learn More
+                  <Button
+                    variant="outline"
+                    asChild
+                    size="lg"
+                    className="w-full sm:w-auto"
+                  >
+                    <Link href="/how-it-works">Learn More</Link>
                   </Button>
                 </div>
               </div>
@@ -240,5 +265,5 @@ export default function Home() {
         </section>
       </main>
     </>
-  )
+  );
 }
