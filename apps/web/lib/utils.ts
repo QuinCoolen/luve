@@ -30,3 +30,5 @@ export const formatTimeRemaining = (endDate: string) => {
 export const formatBidTime = (date: string) => {
   return new Date(date).toLocaleString();
 };
+
+export const formatter = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0 });
