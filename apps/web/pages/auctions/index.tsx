@@ -1,4 +1,11 @@
-import { Select, SelectItem, SelectGroup, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectItem,
+  SelectGroup,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import AuctionCard from "@/components/auctions/auction-card";
 import { useState } from "react";
 import { GetServerSideProps } from "next";
@@ -18,7 +25,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       },
     };
   } catch (error) {
-    console.error('Error fetching auctions:', error);
+    console.error("Error fetching auctions:", error);
     return {
       props: {
         auctions: [],
@@ -37,9 +44,13 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
     if (value === "all") {
       setFilteredAuctions(auctions);
     } else if (value === "live") {
-      setFilteredAuctions(auctions.filter(auction => new Date(auction.endDate) > new Date()));
+      setFilteredAuctions(
+        auctions.filter((auction) => new Date(auction.endDate) > new Date())
+      );
     } else if (value === "past") {
-      setFilteredAuctions(auctions.filter(auction => new Date(auction.endDate) <= new Date()));
+      setFilteredAuctions(
+        auctions.filter((auction) => new Date(auction.endDate) <= new Date())
+      );
     }
   };
 
@@ -52,7 +63,10 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
             Browse through our latest auctions and find your next favorite item.
           </p>
         </div>
-        <Select onValueChange={handleCategoryChange}>
+        <Select
+          defaultValue={selectedCategory}
+          onValueChange={handleCategoryChange}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
@@ -66,7 +80,6 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
         </Select>
       </div>
 
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredAuctions.map((auction) => (
           <AuctionCard
