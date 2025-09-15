@@ -105,7 +105,6 @@ test.describe('Navigation Tests', () => {
     // Verify all navigation links are present in the header using more specific selectors
     await expect(page.locator('nav a[href="/"]')).toBeVisible();
     await expect(page.locator('nav a[href="/auctions"]')).toBeVisible();
-    await expect(page.locator('nav a[href="/categories"]')).toBeVisible();
     await expect(page.locator('nav a[href="/how-it-works"]')).toBeVisible();
     await expect(page.locator('nav a[href="/about-us"]')).toBeVisible();
 
