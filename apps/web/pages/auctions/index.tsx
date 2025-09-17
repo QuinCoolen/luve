@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AuctionCard from "@/components/auctions/auction-card";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GetServerSideProps } from "next";
 import { auctionService } from "@/services/api";
 import { Auction } from "@/types/auction";
@@ -35,23 +35,28 @@ export const getServerSideProps: GetServerSideProps = async () => {
 };
 
 export default function AuctionsPage({ auctions }: AuctionsPageProps) {
-  const [selectedCategory, setSelectedCategory] = useState("live");
-  const [filteredAuctions, setFilteredAuctions] = useState(auctions);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const filteredAuctions = useMemo(() => {
+    const now = new Date();
+
+    if (selectedCategory === "all") {
+      return auctions;
+    }
+
+    if (selectedCategory === "live") {
+      return auctions.filter((auction) => new Date(auction.endDate) > now);
+    }
+
+    if (selectedCategory === "past") {
+      return auctions.filter((auction) => new Date(auction.endDate) <= now);
+    }
+
+    return auctions;
+  }, [auctions, selectedCategory]);
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
-
-    if (value === "all") {
-      setFilteredAuctions(auctions);
-    } else if (value === "live") {
-      setFilteredAuctions(
-        auctions.filter((auction) => new Date(auction.endDate) > new Date())
-      );
-    } else if (value === "past") {
-      setFilteredAuctions(
-        auctions.filter((auction) => new Date(auction.endDate) <= new Date())
-      );
-    }
   };
 
   return (
@@ -63,10 +68,7 @@ export default function AuctionsPage({ auctions }: AuctionsPageProps) {
             Browse through our latest auctions and find your next favorite item.
           </p>
         </div>
-        <Select
-          defaultValue={selectedCategory}
-          onValueChange={handleCategoryChange}
-        >
+        <Select onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
