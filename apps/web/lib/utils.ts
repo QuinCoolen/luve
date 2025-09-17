@@ -32,3 +32,24 @@ export const formatBidTime = (date: string) => {
 };
 
 export const formatter = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0 });
+
+export const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Paid":
+      return "bg-green-100 text-green-800";
+    case "PaymentPending":
+      return "bg-yellow-100 text-yellow-800";
+    case "NotFinished":
+      return "bg-blue-100 text-blue-800";
+    case "Unpaid":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+export const formatStatus = (status: unknown) => {
+  if (typeof status === "string") return status.replace(/_/g, " ").toUpperCase();
+  if (status == null) return "UNKNOWN";
+  return String(status).toUpperCase();
+};

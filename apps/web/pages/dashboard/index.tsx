@@ -31,22 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatter } from "@/lib/utils";
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Paid":
-      return "bg-green-100 text-green-800";
-    case "PaymentPending":
-      return "bg-yellow-100 text-yellow-800";
-    case "NotFinished":
-      return "bg-blue-100 text-blue-800";
-    case "Unpaid":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
+import { formatStatus, formatter, getStatusColor } from "@/lib/utils";
 
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
@@ -270,7 +255,7 @@ export default function Dashboard({ auctions }: { auctions: Auction[] }) {
                       auction.status
                     )}`}
                   >
-                    {auction.status.replace("_", " ").toUpperCase()}
+                    {formatStatus(auction.status)}
                   </Badge>
                 </div>
 
