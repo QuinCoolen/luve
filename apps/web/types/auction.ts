@@ -1,5 +1,12 @@
 import { User } from "./user";
 
+export const enum AuctionStatus {
+  NotFinished = 0,
+  Unpaid = 1,
+  Paid = 2,
+  PaymentPending = 3,
+}
+
 export interface Auction {
   id: number;
   title: string;
@@ -7,7 +14,7 @@ export interface Auction {
   startingPrice: number;
   currentPrice: number;
   increment: number;
-  status: string;
+  status: AuctionStatus;
   imageUrl: string;
   endDate: string;
   user: User;

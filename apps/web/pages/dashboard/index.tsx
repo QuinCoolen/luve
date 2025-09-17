@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { auctionService, checkoutService } from "@/services/api";
-import { Auction } from "@/types/auction";
+import { Auction, AuctionStatus } from "@/types/auction";
 import { GetServerSidePropsContext } from "next";
 import { useRouter } from "next/navigation";
 import {
@@ -108,12 +108,13 @@ export default function Dashboard({ auctions }: { auctions: Auction[] }) {
 
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "paymentpending")
-      return matchesSearch && auction.status === "PaymentPending";
-    if (activeTab === "paid") return matchesSearch && auction.status === "Paid";
+      return matchesSearch && auction.status === AuctionStatus.PaymentPending;
+    if (activeTab === "paid")
+      return matchesSearch && auction.status === AuctionStatus.Paid;
     if (activeTab === "notfinished")
-      return matchesSearch && auction.status === "NotFinished";
+      return matchesSearch && auction.status === AuctionStatus.NotFinished;
     if (activeTab === "unpaid")
-      return matchesSearch && auction.status === "Unpaid";
+      return matchesSearch && auction.status === AuctionStatus.Unpaid;
 
     return matchesSearch;
   });
@@ -124,7 +125,7 @@ export default function Dashboard({ auctions }: { auctions: Auction[] }) {
     0
   );
   const pendingPayments = auctions.filter(
-    (a) => a.status === "PaymentPending"
+    (a) => a.status === AuctionStatus.PaymentPending
   ).length;
 
   const handleCheckout = async (auctionId: number) => {
@@ -317,7 +318,7 @@ export default function Dashboard({ auctions }: { auctions: Auction[] }) {
                     View Details
                   </Button>
 
-                  {auction.status === "Unpaid" ? (
+                  {auction.status === AuctionStatus.Unpaid ? (
                     <Button
                       onClick={() => handleCheckout(auction.id)}
                       size="sm"
