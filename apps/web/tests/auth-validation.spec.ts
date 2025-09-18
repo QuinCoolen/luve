@@ -155,6 +155,9 @@ test.describe('Authentication Validation Tests', () => {
       await page.getByPlaceholder('Password').focus();
       await page.getByPlaceholder('Password').blur();
 
+      await page.getByPlaceholder('Confirm Password').focus();
+      await page.getByPlaceholder('Confirm Password').blur();
+
       // Wait a moment for any validation to appear
       await page.waitForTimeout(500);
 
@@ -179,6 +182,9 @@ test.describe('Authentication Validation Tests', () => {
 
       // Start typing in password field
       await page.getByPlaceholder('Password').fill('test');
+
+      // Start typing in confirm password field
+      await page.getByPlaceholder('Confirm Password').fill('test');
 
       // Wait a moment
       await page.waitForTimeout(500);

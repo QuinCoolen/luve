@@ -42,6 +42,7 @@ test.describe('Navigation Tests', () => {
     await expect(page.getByPlaceholder('Username')).toBeVisible();
     await expect(page.getByPlaceholder('Email')).toBeVisible();
     await expect(page.getByPlaceholder('Password')).toBeVisible();
+    await expect(page.getByPlaceholder('Confirm Password')).toBeVisible();
 
     // Verify the register button is present
     await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
