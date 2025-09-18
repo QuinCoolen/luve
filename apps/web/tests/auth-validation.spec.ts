@@ -30,7 +30,8 @@ test.describe('Authentication Validation Tests', () => {
       // Fill form with invalid email
       await page.getByPlaceholder('Username').fill('testuser');
       await page.getByPlaceholder('Email').fill('invalid-email');
-      await page.getByPlaceholder('Password').fill('password123');
+      await page.getByPlaceholder('Password', { exact: true }).fill('password123');
+      await page.getByPlaceholder('Confirm Password', { exact: true }).fill('password123');
 
       // Submit form
       await page.getByRole('button', { name: 'Register' }).click();
@@ -50,7 +51,8 @@ test.describe('Authentication Validation Tests', () => {
       // Fill form with short password
       await page.getByPlaceholder('Username').fill('testuser');
       await page.getByPlaceholder('Email').fill('test@example.com');
-      await page.getByPlaceholder('Password').fill('123');
+      await page.getByPlaceholder('Password', { exact: true }).fill('123');
+      await page.getByPlaceholder('Confirm Password', { exact: true }).fill('123');
 
       // Submit form
       await page.getByRole('button', { name: 'Register' }).click();
@@ -86,7 +88,7 @@ test.describe('Authentication Validation Tests', () => {
 
       // Fill form with invalid email
       await page.getByPlaceholder('Email').fill('invalid-email');
-      await page.getByPlaceholder('Password').fill('password123');
+      await page.getByPlaceholder('Password', { exact: true }).fill('password123');
 
       // Submit form
       await page.getByRole('button', { name: 'Login' }).click();
@@ -105,7 +107,7 @@ test.describe('Authentication Validation Tests', () => {
 
       // Fill form with non-existent user
       await page.getByPlaceholder('Email').fill('nonexistent@example.com');
-      await page.getByPlaceholder('Password').fill('password123');
+      await page.getByPlaceholder('Password', { exact: true }).fill('password123');
 
       // Submit form
       await page.getByRole('button', { name: 'Login' }).click();
@@ -124,7 +126,7 @@ test.describe('Authentication Validation Tests', () => {
 
       // Fill form with wrong password
       await page.getByPlaceholder('Email').fill('admin@example.com');
-      await page.getByPlaceholder('Password').fill('wrongpassword');
+      await page.getByPlaceholder('Password', { exact: true }).fill('wrongpassword');
 
       // Submit form
       await page.getByRole('button', { name: 'Login' }).click();
@@ -152,8 +154,11 @@ test.describe('Authentication Validation Tests', () => {
       await page.getByPlaceholder('Email').blur();
 
       // Focus and blur password field
-      await page.getByPlaceholder('Password').focus();
-      await page.getByPlaceholder('Password').blur();
+      await page.getByPlaceholder('Password', { exact: true }).focus();
+      await page.getByPlaceholder('Password', { exact: true }).blur();
+
+      await page.getByPlaceholder('Confirm Password', { exact: true }).focus();
+      await page.getByPlaceholder('Confirm Password', { exact: true }).blur();
 
       // Wait a moment for any validation to appear
       await page.waitForTimeout(500);
@@ -178,7 +183,10 @@ test.describe('Authentication Validation Tests', () => {
       await page.getByPlaceholder('Email').fill('test@');
 
       // Start typing in password field
-      await page.getByPlaceholder('Password').fill('test');
+      await page.getByPlaceholder('Password', { exact: true }).fill('test');
+
+      // Start typing in confirm password field
+      await page.getByPlaceholder('Confirm Password', { exact: true }).fill('test');
 
       // Wait a moment
       await page.waitForTimeout(500);
