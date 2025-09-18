@@ -31,6 +31,7 @@ test.describe('Authentication Validation Tests', () => {
       await page.getByPlaceholder('Username').fill('testuser');
       await page.getByPlaceholder('Email').fill('invalid-email');
       await page.getByPlaceholder('Password').fill('password123');
+      await page.getByPlaceholder('Confirm Password').fill('password123');
 
       // Submit form
       await page.getByRole('button', { name: 'Register' }).click();
@@ -51,6 +52,7 @@ test.describe('Authentication Validation Tests', () => {
       await page.getByPlaceholder('Username').fill('testuser');
       await page.getByPlaceholder('Email').fill('test@example.com');
       await page.getByPlaceholder('Password').fill('123');
+      await page.getByPlaceholder('Confirm Password').fill('123');
 
       // Submit form
       await page.getByRole('button', { name: 'Register' }).click();
