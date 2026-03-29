@@ -53,6 +53,50 @@ export const auctionService = {
       }
       throw error;
     }
+  },
+
+  getMyCreatedAuctions: async (cookie?: string) => {
+    try {
+      return await fetchAPI('/api/auctions/user/created', {
+        credentials: 'include',
+        headers: cookie ? {
+          Cookie: cookie
+        } : undefined
+      });
+    } catch (error: any) {
+      if (error.message.includes('401')) {
+        return [];
+      }
+      throw error;
+    }
+  },
+
+  createAuction: async (data: {
+    title: string;
+    description: string;
+    startingPrice: number;
+    currentPrice: number;
+    increment: number;
+    status: number;
+    imageUrl: string;
+    endDate: string;
+    userId: string;
+  }) => {
+    const response = await fetch(`${API_URL}/api/auctions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (response.status === 400) {
+      const error = await response.json();
+      throw new ValidationError(error.message, error.errors);
+    }
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
   }
 };
 
