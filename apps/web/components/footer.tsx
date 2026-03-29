@@ -10,7 +10,7 @@ export default function Footer() {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Gavel className="h-6 w-6" />
-                <span className="text-xl font-bold">GoonAuctions</span>
+                <span className="text-xl font-bold">Luve Auctions</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 The premier destination for luxury auctions and rare collectibles.
@@ -116,7 +116,7 @@ export default function Footer() {
           </div>
 
           <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} GoonAuctions. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Luve. All rights reserved.</p>
           </div>
         </div>
       </footer>

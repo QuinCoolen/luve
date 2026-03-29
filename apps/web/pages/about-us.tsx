@@ -28,7 +28,7 @@ export default function AboutPage() {
     {
       name: "John Doe",
       role: "Founder & CEO",
-      bio: "With over 25 years in luxury auctions, John founded GoonAuctions to democratize access to exceptional collectibles.",
+      bio: "With over 25 years in luxury auctions, John founded Luve to democratize access to exceptional collectibles.",
       initials: "JD",
     },
     {
@@ -56,7 +56,7 @@ export default function AboutPage() {
       <section className="py-24 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-balance leading-tight">
-            About <span className="text-primary">GoonAuctions</span>
+            About <span className="text-primary">Luve</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 text-pretty max-w-3xl mx-auto leading-relaxed">
             For over two decades, we have been the trusted bridge between
@@ -75,7 +75,7 @@ export default function AboutPage() {
           </div>
           <div className="space-y-6 text-lg leading-relaxed text-muted-foreground text-center">
             <p className="text-pretty">
-              Founded in 1998 by Victoria Sterling, GoonAuctions began as a
+              Founded in 1998 by Victoria Sterling, Luve began as a
               vision to create a more accessible and transparent luxury auction
               experience. What started as a small gallery in Manhattan has
               evolved into a globally recognized platform.
@@ -194,7 +194,7 @@ export default function AboutPage() {
             Ready to Begin Your Collection?
           </h2>
           <p className="text-xl text-muted-foreground mb-8 text-pretty max-w-2xl mx-auto leading-relaxed">
-            Join thousands of collectors who trust GoonAuctions for their most
+            Join thousands of collectors who trust Luve for their most
             important acquisitions.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

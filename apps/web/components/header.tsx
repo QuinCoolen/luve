@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { AuthContext } from "@/context/auth";
+import { userService } from "@/services/api";
 import { Gavel, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AuthContext } from "@/context/auth";
 import { useContext } from "react";
-import { userService } from "@/services/api";
 
 export default function Header() {
   const pathname = usePathname();
@@ -20,7 +20,7 @@ export default function Header() {
       <div className="container flex h-16 items-center justify-between mx-auto">
         <div className="flex items-center gap-2">
           <Gavel className="h-6 w-6" />
-          <span className="text-xl font-bold">GoonAuctions</span>
+          <span className="text-xl font-bold">Luve Auctions</span>
         </div>
 
         <nav className="hidden md:flex items-center gap-6">

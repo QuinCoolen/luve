@@ -114,6 +114,6 @@ test.describe('Navigation Tests', () => {
     await expect(page.getByRole('link', { name: 'Log In' })).toBeVisible();
 
     // Verify the logo/brand is present in the header specifically
-    await expect(page.locator('header span:has-text("GoonAuctions")')).toBeVisible();
+    await expect(page.locator('header span:has-text("Luve")')).toBeVisible();
   });
 });

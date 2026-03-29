@@ -1,11 +1,11 @@
-import { useState } from "react";
-import Head from "next/head";
-import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, Clock, Award, Heart, ChevronRight } from "lucide-react";
+import { Award, ChevronRight, Clock, Heart, ShoppingBag } from "lucide-react";
+import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Home() {
   const [activeAuction, setActiveAuction] = useState(0);
@@ -70,7 +70,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Goon Auctions | Find Rare and Luxury Items</title>
+        <title>Luve Auctions | Find Rare and Luxury Items</title>
         <meta
           name="description"
           content="Discover and bid on exclusive luxury items, antiques, art, and collectibles."
