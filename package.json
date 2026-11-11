@@ -2,19 +2,29 @@
   "name": "luve",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@10.15.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,green \"pnpm --filter luve-api start:dev\" \"pnpm --filter luve-web dev\"",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r --if-present lint",
-    "test": "pnpm -r --if-present test",
-    "openapi:export": "pnpm --filter luve-api openapi:export",
-    "api:generate": "pnpm --filter luve-web api:generate"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "openapi": "turbo run openapi:export",
+    "api:generate": "turbo run api:generate --filter=@luve/web",
+    "env:init": "node scripts/env-init.mjs",
+    "format": "prettier --write .",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "stack:up": "docker compose --env-file infra/docker.env --profile apps up -d --build --wait",
+    "stack:down": "docker compose --env-file infra/docker.env --profile apps down"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "oxlint": "^1.93.0",
+    "prettier": "^3.10.0",
+    "turbo": "^2.11.11"
   }
 }

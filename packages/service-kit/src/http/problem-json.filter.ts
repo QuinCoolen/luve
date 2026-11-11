@@ -1,47 +1,31 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { ZodValidationException } from 'nestjs-zod';
-import { ZodError } from 'zod';
-
-/**
- * RFC 7807 "problem details" — the single response shape for every error.
- * @see https://datatracker.ietf.org/doc/html/rfc7807
- */
-export interface ProblemDetails {
-  /** A URI reference identifying the problem type (relative is fine). */
-  type: string;
-  /** Short, human-readable summary of the problem type. */
-  title: string;
-  /** HTTP status code. */
-  status: number;
-  /** Human-readable explanation specific to this occurrence. */
-  detail: string;
-  /** URI reference identifying the specific occurrence (the request path). */
-  instance: string;
-  /** Field-keyed validation messages, when applicable. */
-  errors?: Record<string, string[]>;
-}
+import { ProblemException, type ProblemDetails } from './problem.js';
+import { SchemaValidationException } from './schema-validation.exception.js';
 
 const TITLES: Record<number, string> = {
   [HttpStatus.BAD_REQUEST]: 'Bad Request',
   [HttpStatus.UNAUTHORIZED]: 'Unauthorized',
   [HttpStatus.FORBIDDEN]: 'Forbidden',
   [HttpStatus.NOT_FOUND]: 'Not Found',
+  [HttpStatus.METHOD_NOT_ALLOWED]: 'Method Not Allowed',
   [HttpStatus.CONFLICT]: 'Conflict',
+  [HttpStatus.PAYLOAD_TOO_LARGE]: 'Payload Too Large',
   [HttpStatus.UNPROCESSABLE_ENTITY]: 'Unprocessable Entity',
   [HttpStatus.TOO_MANY_REQUESTS]: 'Too Many Requests',
   [HttpStatus.INTERNAL_SERVER_ERROR]: 'Internal Server Error',
+  [HttpStatus.SERVICE_UNAVAILABLE]: 'Service Unavailable',
 };
 
 const TYPES: Record<number, string> = {
-  [HttpStatus.BAD_REQUEST]: '/errors/validation',
+  [HttpStatus.BAD_REQUEST]: '/errors/bad-request',
   [HttpStatus.UNAUTHORIZED]: '/errors/unauthorized',
   [HttpStatus.FORBIDDEN]: '/errors/forbidden',
   [HttpStatus.NOT_FOUND]: '/errors/not-found',
@@ -50,9 +34,11 @@ const TYPES: Record<number, string> = {
 };
 
 /**
- * Catches everything and renders it as `application/problem+json`. Handles Zod
- * validation errors (field-keyed), Nest `HttpException`s, and any other thrown
- * value (treated as a 500 without leaking internals).
+ * Catches everything and renders it as `application/problem+json`:
+ * - `ProblemException`: its own type/title/detail,
+ * - `SchemaValidationException`: 400 with field-keyed `errors`,
+ * - any other `HttpException`: mapped by status,
+ * - anything else: a 500 that never leaks internals (the stack is logged).
  */
 @Catch()
 export class ProblemJsonFilter implements ExceptionFilter {
@@ -65,9 +51,9 @@ export class ProblemJsonFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<unknown>();
     const response = ctx.getResponse<unknown>();
-    const instance = (httpAdapter.getRequestUrl(request) as string) ?? '';
+    const instance = (httpAdapter.getRequestUrl(request) as string | undefined) ?? '';
 
-    const problem = this.toProblem(exception, instance);
+    const problem = toProblem(exception, instance);
 
     if (problem.status >= 500) {
       this.logger.error(
@@ -79,100 +65,65 @@ export class ProblemJsonFilter implements ExceptionFilter {
     httpAdapter.setHeader(response, 'Content-Type', 'application/problem+json');
     httpAdapter.reply(response, problem, problem.status);
   }
+}
 
-  private toProblem(exception: unknown, instance: string): ProblemDetails {
-    // Request validation failures from nestjs-zod's ZodValidationPipe.
-    if (exception instanceof ZodValidationException) {
-      const zodError = exception.getZodError();
-      return this.validationProblem(zodError, instance);
-    }
-
-    // A ZodError thrown directly (defensive).
-    if (exception instanceof ZodError) {
-      return this.validationProblem(exception, instance);
-    }
-
-    if (exception instanceof HttpException) {
-      const status = exception.getStatus();
-      const { detail, errors } = this.fromHttpException(exception);
-      return {
-        type: this.typeFor(status),
-        title: TITLES[status] ?? exception.name,
-        status,
-        detail,
-        instance,
-        ...(errors ? { errors } : {}),
-      };
-    }
-
+export function toProblem(exception: unknown, instance: string): ProblemDetails {
+  if (exception instanceof ProblemException) {
+    const { status, type, title, detail, errors } = exception.problem;
     return {
-      type: '/errors/internal',
-      title: TITLES[HttpStatus.INTERNAL_SERVER_ERROR]!,
-      status: HttpStatus.INTERNAL_SERVER_ERROR,
-      detail: 'An unexpected error occurred.',
+      type,
+      title,
+      status,
+      detail: detail ?? title,
       instance,
+      ...(errors ? { errors } : {}),
     };
   }
 
-  private validationProblem(
-    zodError: unknown,
-    instance: string,
-  ): ProblemDetails {
-    const base: ProblemDetails = {
+  if (exception instanceof SchemaValidationException) {
+    return {
       type: '/errors/validation',
       title: 'Validation Failed',
       status: HttpStatus.BAD_REQUEST,
       detail: 'One or more fields failed validation.',
       instance,
+      errors: exception.fieldErrors(),
     };
-    return zodError instanceof ZodError
-      ? { ...base, errors: this.fieldErrors(zodError) }
-      : base;
   }
 
-  private fieldErrors(zodError: ZodError): Record<string, string[]> {
-    const fields: Record<string, string[]> = {};
-    for (const issue of zodError.issues) {
-      const key = issue.path.length > 0 ? issue.path.join('.') : '(root)';
-      (fields[key] ??= []).push(issue.message);
-    }
-    return fields;
+  if (exception instanceof HttpException) {
+    const status = exception.getStatus();
+    return {
+      type: typeFor(status),
+      title: TITLES[status] ?? exception.name,
+      status,
+      detail: detailOf(exception),
+      instance,
+    };
   }
 
-  private fromHttpException(exception: HttpException): {
-    detail: string;
-    errors?: Record<string, string[]>;
-  } {
-    const response = exception.getResponse();
+  return {
+    type: '/errors/internal',
+    title: 'Internal Server Error',
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    detail: 'An unexpected error occurred.',
+    instance,
+  };
+}
 
-    if (typeof response === 'string') {
-      return { detail: response };
-    }
-
-    if (typeof response === 'object' && response !== null) {
-      const body = response as Record<string, unknown>;
-      const message = body.message;
-
-      // class-validator style: message is an array of strings.
-      if (Array.isArray(message)) {
-        return {
-          detail: 'One or more fields failed validation.',
-          errors: { '(root)': message.map(String) },
-        };
-      }
-
-      if (typeof message === 'string') {
-        return { detail: message };
-      }
-    }
-
-    return { detail: exception.message };
+function detailOf(exception: HttpException): string {
+  const response = exception.getResponse();
+  if (typeof response === 'string') {
+    return response;
   }
-
-  private typeFor(status: number): string {
-    const mapped = TYPES[status];
-    if (mapped) return mapped;
-    if (status >= 500) return '/errors/internal';
-    return '/errors/http';
+  if (typeof response === 'object' && response !== null) {
+    const message = (response as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+    if (Array.isArray(message)) return message.map(String).join('; ');
   }
+  return exception.message;
+}
+
+function typeFor(status: number): string {
+  return TYPES[status] ?? (status >= 500 ? '/errors/internal' : '/errors/http');
 }

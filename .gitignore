@@ -10,7 +10,7 @@ build/
 .next/
 
 # generated Prisma 7 client (regenerated from schema on build)
-luve-api/src/generated/
+src/generated/
 
 # typescript
 *.tsbuildinfo
@@ -38,6 +38,9 @@ yarn-error.log*
 .DS_Store
 *.pem
 .vercel
+
+# turborepo
+.turbo/
 
 # local Claude Code settings
 .claude/settings.local.json

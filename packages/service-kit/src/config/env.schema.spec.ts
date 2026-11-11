@@ -1,36 +1,35 @@
-import { validateEnv } from './env.schema';
+import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
+import { baseEnvSchema, parseEnv } from './env.schema.js';
+
+const schema = baseEnvSchema.extend({
+  DATABASE_URL: z.string().min(1),
+});
 
 const base = {
-  DATABASE_URL: 'postgresql://u:p@localhost:5432/db?schema=public',
-  REDIS_URL: 'redis://localhost:6379',
-  JWT_SECRET: 'x'.repeat(32),
-  JWT_ACCESS_TTL: '15m',
-  JWT_REFRESH_TTL: '30d',
-  CORS_ORIGIN: 'http://localhost:3000',
-  COOKIE_DOMAIN: 'localhost',
+  PORT: '4001',
+  DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
 };
 
-describe('validateEnv', () => {
+describe('parseEnv', () => {
   it('accepts a valid env and applies defaults', () => {
-    const env = validateEnv({ ...base });
+    const env = parseEnv(schema, { ...base });
     expect(env.NODE_ENV).toBe('development');
-    expect(env.PORT).toBe(5218);
+    expect(env.LOG_LEVEL).toBeUndefined();
   });
 
   it('coerces PORT to a number', () => {
-    const env = validateEnv({ ...base, PORT: '4000' });
-    expect(env.PORT).toBe(4000);
+    expect(parseEnv(schema, { ...base }).PORT).toBe(4001);
   });
 
-  it('throws a readable error when a required var is missing', () => {
-    const incomplete: Record<string, unknown> = { ...base };
-    delete incomplete.DATABASE_URL;
-    expect(() => validateEnv(incomplete)).toThrow(
-      /Invalid environment variables/,
+  it('ignores unknown variables', () => {
+    const env = parseEnv(schema, { ...base, PATH: '/usr/bin' });
+    expect(env).not.toHaveProperty('PATH');
+  });
+
+  it('throws a readable error listing every missing variable', () => {
+    expect(() => parseEnv(schema, {})).toThrow(
+      /Invalid environment variables[\s\S]*PORT[\s\S]*DATABASE_URL/,
     );
-  });
-
-  it('throws when JWT_SECRET is too short', () => {
-    expect(() => validateEnv({ ...base, JWT_SECRET: 'short' })).toThrow();
   });
 });
