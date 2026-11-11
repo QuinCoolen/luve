@@ -1,0 +1,166 @@
+# Luve local stack.
+#
+#   pnpm infra:up   → infrastructure only (Postgres, Redis, RabbitMQ, Traefik);
+#                     run the services + web on the host with `pnpm dev`.
+#   pnpm stack:up   → everything in containers (adds the `apps` profile and
+#                     points Traefik at the containers via infra/docker.env).
+#
+# Browse the app and every API through the gateway: http://localhost:8000
+name: luve
+
+x-app: &app
+  profiles: [apps]
+  restart: unless-stopped
+  build: &app-build
+    context: .
+    dockerfile: services/Dockerfile
+  depends_on: &app-deps
+    postgres: { condition: service_healthy }
+    rabbitmq: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+x-app-healthcheck: &app-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 20s
+
+services:
+  # --- infrastructure ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: luve
+      POSTGRES_PASSWORD: luve
+      POSTGRES_DB: luve
+    ports: ['5433:5432'] # 5433 on the host to avoid clashing with a local Postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U luve -d luve']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ['6380:6379']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    ports:
+      - '5673:5672' # AMQP
+      - '15673:15672' # management UI (user/pass: luve/luve)
+    volumes:
+      - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-luve.conf:ro
+      - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'check_port_connectivity']
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  traefik:
+    image: traefik:v3
+    restart: unless-stopped
+    command:
+      - --entrypoints.web.address=:8000
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --ping=true
+      - --accesslog=true
+      - --log.level=INFO
+    ports:
+      - '8000:8000' # the one browser origin: web app + /api/v1/* + /socket.io
+      - '8088:8080' # Traefik dashboard
+    volumes:
+      # host/ routes to `pnpm dev` processes, docker/ to the app containers.
+      - ./infra/traefik/${TRAEFIK_DYNAMIC:-host}:/etc/traefik/dynamic:ro
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- apps (profile: apps) ---------------------------------------------------
+  identity:
+    <<: *app
+    build: { <<: *app-build, args: { SERVICE: identity } }
+    environment:
+      NODE_ENV: production
+      PORT: 4001
+    healthcheck:
+      <<: *app-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  auctions:
+    <<: *app
+    build: { <<: *app-build, args: { SERVICE: auctions } }
+    environment:
+      NODE_ENV: production
+      PORT: 4002
+    healthcheck:
+      <<: *app-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4002/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  bidding:
+    <<: *app
+    build: { <<: *app-build, args: { SERVICE: bidding } }
+    environment:
+      NODE_ENV: production
+      PORT: 4003
+    healthcheck:
+      <<: *app-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4003/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  payments:
+    <<: *app
+    build: { <<: *app-build, args: { SERVICE: payments } }
+    environment:
+      NODE_ENV: production
+      PORT: 4004
+    healthcheck:
+      <<: *app-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4004/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  realtime:
+    <<: *app
+    build: { <<: *app-build, args: { SERVICE: realtime } }
+    environment:
+      NODE_ENV: production
+      PORT: 4005
+    healthcheck:
+      <<: *app-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:4005/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  web:
+    profiles: [apps]
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      # Server-side rendering calls the API through the gateway container.
+      INTERNAL_API_URL: http://traefik:8000
+    depends_on:
+      traefik: { condition: service_healthy }
+    healthcheck:
+      <<: *app-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+volumes:
+  pgdata:

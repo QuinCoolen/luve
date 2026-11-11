@@ -1,0 +1,57 @@
+# Traefik dynamic routing — host mode.
+# Services run on the host (`pnpm dev`); Traefik runs in Docker and reaches them via host.docker.internal.
+#
+# Routes are resource-based: the browser sees one API (/api/v1/...) and never
+# learns how the backend is split into services. Each service serves its full
+# path, so nothing is stripped. Keep in sync with the sibling routes.yml.
+http:
+  routers:
+    identity:
+      entryPoints: [web]
+      rule: "PathPrefix(`/api/v1/auth`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/docs/identity`)"
+      service: identity
+    auctions:
+      entryPoints: [web]
+      rule: "PathPrefix(`/api/v1/auctions`) || PathPrefix(`/docs/auctions`)"
+      service: auctions
+    # Bids are nested under auctions in the URL but owned by bidding, so this
+    # rule must outrank the auctions one.
+    bidding:
+      entryPoints: [web]
+      rule: "PathRegexp(`^/api/v1/auctions/[^/]+/bids`) || PathPrefix(`/api/v1/bids`) || PathPrefix(`/docs/bidding`)"
+      priority: 1000
+      service: bidding
+    payments:
+      entryPoints: [web]
+      rule: "PathPrefix(`/api/v1/payments`) || PathPrefix(`/docs/payments`)"
+      service: payments
+    realtime:
+      entryPoints: [web]
+      rule: "PathPrefix(`/socket.io`) || PathPrefix(`/docs/realtime`)"
+      service: realtime
+    # Everything else is the Next.js app.
+    web:
+      entryPoints: [web]
+      rule: "PathPrefix(`/`)"
+      priority: 1
+      service: web
+
+  services:
+    identity:
+      loadBalancer:
+        servers: [{ url: "http://host.docker.internal:4001" }]
+    auctions:
+      loadBalancer:
+        servers: [{ url: "http://host.docker.internal:4002" }]
+    bidding:
+      loadBalancer:
+        servers: [{ url: "http://host.docker.internal:4003" }]
+    payments:
+      loadBalancer:
+        servers: [{ url: "http://host.docker.internal:4004" }]
+    realtime:
+      loadBalancer:
+        servers: [{ url: "http://host.docker.internal:4005" }]
+    web:
+      loadBalancer:
+        servers: [{ url: "http://host.docker.internal:3000" }]
