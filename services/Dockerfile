@@ -30,6 +30,8 @@ RUN turbo run build --filter=@luve/${SERVICE}
 RUN pnpm --filter @luve/${SERVICE} deploy --prod --legacy /out
 
 FROM node:${NODE_VERSION} AS runtime
+# OpenSSL for Prisma's schema engine (migrate deploy) on Alpine.
+RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out .

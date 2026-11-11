@@ -100,9 +100,16 @@ services:
   identity:
     <<: *app
     build: { <<: *app-build, args: { SERVICE: identity } }
+    # Apply pending migrations, then start.
+    command: ['sh', '-c', 'node_modules/.bin/prisma migrate deploy && node dist/main.js']
     environment:
       NODE_ENV: production
       PORT: 4001
+      DATABASE_URL: postgresql://luve:luve@postgres:5432/identity
+      RABBITMQ_URL: amqp://luve:luve@rabbitmq:5672
+      # No JWT_PRIVATE_KEY: identity generates an ephemeral signing key at boot
+      # (clients transparently refresh after a restart). Set one to keep tokens
+      # valid across restarts.
     healthcheck:
       <<: *app-healthcheck
       test: ['CMD', 'node', '-e', "fetch('http://localhost:4001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]

@@ -10,6 +10,13 @@ http:
       entryPoints: [web]
       rule: "PathPrefix(`/api/v1/auth`) || PathPrefix(`/api/v1/users`) || PathPrefix(`/docs/identity`)"
       service: identity
+    # Brute-force protection: login and register are rate limited per client IP.
+    identity-credentials:
+      entryPoints: [web]
+      rule: "Path(`/api/v1/auth/login`) || Path(`/api/v1/auth/register`)"
+      priority: 2000
+      middlewares: [credentials-rate-limit]
+      service: identity
     auctions:
       entryPoints: [web]
       rule: "PathPrefix(`/api/v1/auctions`) || PathPrefix(`/docs/auctions`)"
@@ -35,6 +42,13 @@ http:
       rule: "PathPrefix(`/`)"
       priority: 1
       service: web
+
+  middlewares:
+    credentials-rate-limit:
+      rateLimit:
+        average: 30 # requests per period, per client IP
+        period: 1m
+        burst: 15
 
   services:
     identity:
