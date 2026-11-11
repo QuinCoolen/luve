@@ -8,7 +8,6 @@ import { defineConfig } from "orval";
  *
  * Add a project here when a service gets its first endpoints.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const service = (name: string) => ({
   input: `../../services/${name}/openapi.json`,
   output: {
@@ -20,12 +19,12 @@ const service = (name: string) => ({
     clean: true,
     override: {
       mutator: { path: "src/api/mutator/axios.ts", name: "customInstance" },
-      query: { useQuery: true, signal: true },
+      query: { signal: true },
     },
   },
 });
 
 export default defineConfig({
-  // identity: service("identity"),   // Phase 1
+  identity: service("identity"),
 });
 
