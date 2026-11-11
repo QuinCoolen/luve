@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths: &paths
       - services/identity/**
+      - apps/web/orval.config.ts
+      - apps/web/src/api/generated/identity/**
       - packages/**
       - services/Dockerfile
       - pnpm-lock.yaml
@@ -14,6 +16,8 @@ on:
       - .github/workflows/identity.yml
   pull_request:
     paths: *paths
+  # Run by hand from the Actions tab (path filters can't see a branch's first push).
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,6 +28,7 @@ jobs:
     uses: ./.github/workflows/_service.yml
     with:
       service: identity
+      web-client: true
     permissions:
       contents: read
       packages: write

@@ -14,6 +14,8 @@ on:
       - .github/workflows/payments.yml
   pull_request:
     paths: *paths
+  # Run by hand from the Actions tab (path filters can't see a branch's first push).
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
