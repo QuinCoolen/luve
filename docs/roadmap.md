@@ -5,8 +5,8 @@ Each phase ships working code end to end (service + events + frontend) and gets 
 | # | Phase | Status |
 |---|---|---|
 | 0 | **Foundation**: monorepo (pnpm + Turborepo), NestJS 12 / ESM, `@luve/service-kit`, service shells, Docker infra, Traefik gateway, per-service CI | done |
-| 1 | **Identity**: register, login, refresh rotation, logout, `/me`, profiles, JWKS, JWT guard; `@luve/contracts`, outbox publishing; web login switched over | in progress |
-| 2 | **Auctions**: consumer side of messaging (inbox, retries, DLQ), create/list (cursor)/detail/mine, local copy of seller names; web auction pages switched over | planned |
+| 1 | **Identity**: register, login, refresh rotation with reuse detection, logout, `/me`, profiles, JWKS, shared JWT guard; `@luve/contracts`, outbox publishing (`@nestjs/outbox` → RabbitMQ); gateway rate limit; web login/register switched over with silent refresh | done |
+| 2 | **Auctions** *(next)*: consumer side of messaging (inbox, retries, DLQ), create/list (cursor)/detail/mine, local copy of seller names; web auction pages switched over | planned |
 | 3 | **Bidding**: event-sourced aggregate, commands/queries, projector + relay, closing scheduler + sweeper, cancellation saga; web bid form via REST | planned |
 | 4 | **Realtime**: Socket.IO gateway fed by events; web moves from SignalR to socket.io-client | planned |
 | 5 | **Payments**: Stripe checkout (winner only) + signed webhooks | planned |

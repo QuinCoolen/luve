@@ -44,7 +44,7 @@ identity signs short-lived access tokens (Ed25519 JWT, 15 min) and publishes its
 
 - RabbitMQ topic exchange **`luve.events`**, routing key `<service>.<event>.v<n>` (e.g. `bidding.bid-placed.v1`), plus dead-letter exchange `luve.events.dlx`.
 - Every message is an envelope `{ eventId, type, occurredAt, correlationId, causationId, producer, data }`. The schemas are Zod, in `@luve/contracts`, validated on publish and on consume. `eventId` is the AMQP `messageId`.
-- **Outbox:** a service writes its state change and the outgoing event in the **same database transaction**; a relay publishes the outbox afterwards. A crash can't lose an event or publish one for a change that rolled back.
+- **Outbox:** a service writes its state change and the outgoing event in the **same database transaction**; a relay publishes the outbox afterwards. A crash can't lose an event or publish one for a change that rolled back. Implemented with [`@nestjs/outbox`](https://docs.nestjs.com/reliability/outbox) (tables in the service's own database, schema `nest_outbox`) and a small RabbitMQ transport in `@luve/messaging` that only reports success once the broker confirmed the publish. See [ADR 0006](adr/0006-nestjs-outbox.md).
 - **Inbox:** consumers record processed `eventId`s, so redelivered messages are ignored (delivery is at-least-once).
 - Queues are declared in [`infra/rabbitmq/definitions.json`](../infra/rabbitmq/definitions.json) so they exist before the first publish. A topic exchange silently drops messages nobody is bound to. The dev queue **`luve.audit`** is bound to `#` and works as a live event log in the management UI.
 - Events from the bidding stream carry the **stream version**, so consumers can ignore stale or duplicate updates even if messages arrive out of order.
@@ -120,8 +120,9 @@ Only the winner can pay. Payments checks this against its own copy of `bidding-c
 ## Shared code
 
 - **`@luve/service-kit`**: every service boots with `bootstrapService(service)`, which provides helmet, cookies, `/api/v1` routing, Zod validation through Nest's Standard Schema pipe, problem+json errors, pino logging with request ids, `/health/live` + `/health/ready`, and Swagger at `/docs/<name>`. `exportOpenApi` writes `openapi.json` without connecting to anything.
-- **`@luve/contracts`** *(Phase 1)*: integration-event and websocket payload schemas.
-- **`@luve/messaging`** *(Phase 1–2)*: RabbitMQ publishing, outbox relay, inbox.
+- **`@luve/service-kit` auth**: `JwtAuthModule` + `@Auth()` / `@CurrentUser()` verify identity's access tokens locally, against its JWKS.
+- **`@luve/contracts`**: integration-event schemas (`defineEvent('identity.user-registered.v1', zodSchema)`) with JSON fixtures that producers and consumers both test against.
+- **`@luve/messaging`**: `MessagingModule.forRoot({ service, prisma })` wires RabbitMQ and the outbox; `IntegrationEvents.stage(tx, Contract, data)` validates an event against its contract and adds it to the outbox inside the caller's transaction. Consumers and the inbox follow in Phase 2.
 
 ## Frontend contract
 

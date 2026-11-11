@@ -54,6 +54,14 @@ pnpm dev           # all services + web on the host, in watch mode
 
 Open **http://localhost:8000**. Everything (web app, APIs, websockets) goes through the gateway on that one origin.
 
+First time? Create demo accounts and a stable token-signing key:
+
+```bash
+pnpm --filter @luve/identity db:deploy       # apply identity's migrations
+pnpm --filter @luve/identity keys:generate   # optional: tokens survive restarts
+pnpm --filter @luve/identity seed            # alice@luve.dev / bob@luve.dev, password Password123
+```
+
 Or run everything in containers: `pnpm stack:up` (and `pnpm stack:down`).
 
 | URL | |
@@ -72,8 +80,11 @@ Direct service ports (bypassing the gateway): identity 4001, auctions 4002, bidd
 pnpm build | test | lint | typecheck    # turbo runs them across the workspace
 pnpm openapi                            # export every service's openapi.json
 pnpm api:generate                       # regenerate the web's typed clients (Orval)
-pnpm --filter @luve/identity test       # one package
+pnpm --filter @luve/identity test       # one package (identity's e2e tests start Postgres via Testcontainers)
+pnpm --filter @luve/web exec playwright test --project=chromium   # browser tests, with the stack running
 ```
+
+> **Windows:** Docker Desktop doesn't forward file-change events into bind mounts, so after editing `infra/traefik/**` run `docker compose restart traefik`.
 
 ## CI/CD
 
