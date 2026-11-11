@@ -1,0 +1,29 @@
+name: payments
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - services/payments/**
+      - packages/**
+      - services/Dockerfile
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .github/workflows/_service.yml
+      - .github/workflows/payments.yml
+  pull_request:
+    paths: *paths
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  payments:
+    uses: ./.github/workflows/_service.yml
+    with:
+      service: payments
+    permissions:
+      contents: read
+      packages: write

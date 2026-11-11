@@ -1,0 +1,98 @@
+# Reusable pipeline for one NestJS service. Each services/<name> has a small
+# workflow (identity.yml, auctions.yml, …) that triggers only on changes to
+# that service or the shared packages, then calls this file.
+name: service
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: Folder name under services/ (e.g. identity)
+        required: true
+        type: string
+      web-client:
+        description: The service has an Orval project in apps/web, so check the generated client too
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: lint, test, build, contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # `...` includes the workspace packages the service depends on.
+      - name: Lint, typecheck, test, build
+        run: pnpm turbo run lint typecheck test build --filter=@luve/${{ inputs.service }}...
+
+      - name: Export OpenAPI
+        run: pnpm --filter @luve/${{ inputs.service }} openapi:export
+
+      - name: Regenerate web client
+        if: inputs.web-client
+        run: pnpm --filter @luve/web exec orval --project ${{ inputs.service }}
+
+      # The spec and the generated client are committed so PR diffs show API
+      # changes; fail when someone changed the API without regenerating them.
+      - name: Fail on stale contract artifacts
+        run: |
+          git diff --exit-code -- services/${{ inputs.service }}/openapi.json apps/web/src/api/generated/${{ inputs.service }} \
+            || { echo "::error::Run 'pnpm openapi && pnpm api:generate' and commit the result."; exit 1; }
+
+  image:
+    name: docker image
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # GHCR image names must be lowercase; the owner (QuinCoolen) isn't.
+      - name: Image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/luve-${{ inputs.service }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: services/Dockerfile
+          build-args: SERVICE=${{ inputs.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ inputs.service }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.service }}

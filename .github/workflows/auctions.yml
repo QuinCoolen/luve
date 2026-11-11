@@ -1,0 +1,29 @@
+name: auctions
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - services/auctions/**
+      - packages/**
+      - services/Dockerfile
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .github/workflows/_service.yml
+      - .github/workflows/auctions.yml
+  pull_request:
+    paths: *paths
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  auctions:
+    uses: ./.github/workflows/_service.yml
+    with:
+      service: auctions
+    permissions:
+      contents: read
+      packages: write
