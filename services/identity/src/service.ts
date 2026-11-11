@@ -1,4 +1,5 @@
 import { defineService } from '@luve/service-kit';
+import { RequestMethod } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 
 export const service = defineService({
@@ -6,4 +7,5 @@ export const service = defineService({
   title: 'Luve Identity API',
   description: 'Accounts, sessions and JWT issuing (JWKS).',
   module: AppModule,
+  excludeFromPrefix: [{ path: '.well-known/jwks.json', method: RequestMethod.GET }],
 });
