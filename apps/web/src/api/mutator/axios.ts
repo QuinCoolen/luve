@@ -6,7 +6,8 @@ import Axios, { AxiosError, AxiosRequestConfig } from "axios";
  * - `withCredentials` so the httpOnly auth cookies ride along on every request.
  */
 export const AXIOS_INSTANCE = Axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5218",
+  // Empty = same origin: the browser reaches every service through the gateway.
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "",
   withCredentials: true,
 });
 
