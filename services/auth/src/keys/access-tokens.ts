@@ -8,10 +8,13 @@ import { ACCESS_TOKEN_ALGORITHM, SigningKeys } from './signing-keys.js';
 /** The user an access token belongs to. */
 export interface TokenUser {
   id: string;
-  username: string;
 }
 
-/** Issues and checks short-lived access tokens: `{ sub, username }`, signed with EdDSA. */
+/**
+ * Issues and checks short-lived access tokens, signed with EdDSA. A token only
+ * says who you are (`sub` = your user id); profile data like the username
+ * lives in the users service.
+ */
 @Injectable()
 export class AccessTokens {
   constructor(
@@ -23,10 +26,10 @@ export class AccessTokens {
     return this.config.get('ACCESS_TOKEN_TTL_SECONDS', { infer: true });
   }
 
-  issue(user: TokenUser): Promise<string> {
-    return new SignJWT({ username: user.username })
+  issue(userId: string): Promise<string> {
+    return new SignJWT({})
       .setProtectedHeader({ alg: ACCESS_TOKEN_ALGORITHM, kid: this.keys.keyId, typ: 'JWT' })
-      .setSubject(user.id)
+      .setSubject(userId)
       .setIssuer(this.config.get('JWT_ISSUER', { infer: true }))
       .setAudience(this.config.get('JWT_AUDIENCE', { infer: true }))
       .setIssuedAt()
@@ -42,9 +45,9 @@ export class AccessTokens {
       audience: this.config.get('JWT_AUDIENCE', { infer: true }),
       algorithms: [ACCESS_TOKEN_ALGORITHM],
     });
-    if (typeof payload.sub !== 'string' || typeof payload['username'] !== 'string') {
-      throw new Error('access token is missing the sub or username claim');
+    if (typeof payload.sub !== 'string') {
+      throw new Error('access token has no subject');
     }
-    return { id: payload.sub, username: payload['username'] };
+    return { id: payload.sub };
   }
 }

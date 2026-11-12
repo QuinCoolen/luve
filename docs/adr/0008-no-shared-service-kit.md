@@ -9,12 +9,12 @@ Phase 0 added `@luve/service-kit`, a package every service booted from: env vali
 ## Decision
 
 - Each service sets itself up: a plain `main.ts`, plus a `setup.ts` (routing under `/api/v1`, Zod validation, Swagger) once it has endpoints, using Nest's defaults (e.g. its default error body).
-- The JWT guard lives in the auth service, the only one with protected routes.
+- The JWT guard is written in the auth service. The users service has its own copy, adapted to fetch auth's public keys.
 - Shared packages are limited to what services must agree on: the event contracts (`@luve/contracts`) and the outbox wiring (`@luve/messaging`).
 - Shared code gets extracted once the same code has been written two or three times and the duplication actually hurts ("rule of three"), not in advance.
 
 ## Consequences
 
-- A few files repeat between auth and users (`setup.ts`, `zod-schema-converter.ts`, `prisma.service.ts`). That's accepted.
-- When auctions needs to check logins (Phase 2), copy the guard over or extract it into a package then, as a deliberate decision.
+- A few files repeat between auth and users (`setup.ts`, `zod-schema-converter.ts`, `prisma.service.ts`, the JWT guard). That's accepted.
+- When auctions needs to check logins (Phase 2), that's the third copy of the guard: copy it again or extract it into a package then, as a deliberate decision.
 - Health checks, structured logging and a shared error format are left out for now (roadmap Phase 6).

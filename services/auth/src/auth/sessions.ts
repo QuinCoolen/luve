@@ -67,10 +67,9 @@ export class Sessions {
   async rotate(
     token: string,
     client: ClientInfo,
-  ): Promise<{ refresh: IssuedRefreshToken; user: { id: string; username: string } }> {
+  ): Promise<{ refresh: IssuedRefreshToken; userId: string }> {
     const session = await this.prisma.session.findUnique({
       where: { refreshTokenHash: hashToken(token) },
-      include: { user: { select: { id: true, username: true } } },
     });
     if (!session) {
       throw invalidRefreshToken();
@@ -109,7 +108,10 @@ export class Sessions {
       return next;
     });
 
-    return { refresh: { token: refresh.token, expiresAt: refresh.expiresAt }, user: session.user };
+    return {
+      refresh: { token: refresh.token, expiresAt: refresh.expiresAt },
+      userId: session.userId,
+    };
   }
 
   /** Ends the session the token belongs to (logout). Unknown tokens are ignored. */

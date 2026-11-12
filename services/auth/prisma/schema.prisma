@@ -1,5 +1,6 @@
 // Auth service schema. Only this service reads or writes these tables;
-// other services learn about users from auth.user-* events.
+// other services learn about accounts from auth.user-* events. Profile data
+// (username, …) lives in the users service.
 //
 // The transactional outbox keeps its own tables in the `nest_outbox` schema
 // (created by @nestjs/outbox), which Prisma Migrate doesn't touch.
@@ -20,7 +21,6 @@ model User {
   id           String    @id @default(uuid(7)) @db.Uuid
   /// Stored lowercased.
   email        String    @unique
-  username     String    @unique
   /// argon2id
   passwordHash String    @map("password_hash")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)

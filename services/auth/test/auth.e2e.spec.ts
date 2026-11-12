@@ -44,7 +44,7 @@ function fieldsIn(res: Response): string[] {
   return [...new Set(fields)].sort();
 }
 
-const alice = { email: 'Alice@Luve.dev', username: 'alice', password: 'Password123' };
+const alice = { email: 'Alice@Luve.dev', password: 'Password123' };
 
 beforeAll(async () => {
   container = await new PostgreSqlContainer('postgres:16-alpine').start();
@@ -88,8 +88,7 @@ describe('registration', () => {
 
   it('creates the account and signs in', () => {
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ email: 'alice@luve.dev', username: 'alice' });
-    expect(res.body).not.toHaveProperty('passwordHash');
+    expect(res.body).toEqual({ id: expect.any(String), email: 'alice@luve.dev' });
     const set = cookies(res);
     expect(set['jwt']).toBeTruthy();
     expect(set['refresh']).toBeTruthy();
@@ -112,27 +111,30 @@ describe('registration', () => {
     const messages = await outboxTopics();
     expect(messages).toHaveLength(1);
     expect(messages[0]!.topic).toBe('auth.user-registered.v1');
-    expect(messages[0]!.payload.data).toMatchObject({ email: 'alice@luve.dev', username: 'alice' });
+    expect(messages[0]!.payload.data).toMatchObject({
+      userId: res.body.id,
+      email: 'alice@luve.dev',
+    });
   });
 
-  it('refuses a taken email or username, per field', async () => {
+  it('refuses a taken email', async () => {
     const dup = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({ ...alice, email: 'ALICE@luve.dev' })
       .expect(409);
-    expect(fieldsIn(dup)).toEqual(['email', 'username']);
+    expect(fieldsIn(dup)).toEqual(['email']);
   });
 
   it('reports every invalid field', async () => {
     const bad = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
-      .send({ email: 'nope', username: 'x', password: 'short' })
+      .send({ email: 'nope', password: 'short' })
       .expect(400);
-    expect(fieldsIn(bad)).toEqual(['email', 'password', 'username']);
+    expect(fieldsIn(bad)).toEqual(['email', 'password']);
   });
 });
 
-describe('login and /me', () => {
+describe('login', () => {
   it('rejects a wrong password and an unknown email the same way', async () => {
     const wrong = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
@@ -146,15 +148,13 @@ describe('login and /me', () => {
     expect(unknown.body).toEqual(wrong.body);
   });
 
-  it('signs in and answers /me with the access cookie', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent.post('/api/v1/auth/login').send(alice).expect(200);
-    const me = await agent.get('/api/v1/auth/me').expect(200);
-    expect(me.body.username).toBe('alice');
-  });
-
-  it('requires authentication for /me', async () => {
-    await request(app.getHttpServer()).get('/api/v1/auth/me').expect(401);
+  it('signs in with both cookies', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send(alice)
+      .expect(200);
+    expect(res.body.email).toBe('alice@luve.dev');
+    expect(cookies(res)).toMatchObject({ jwt: expect.any(String), refresh: expect.any(String) });
   });
 });
 
@@ -213,34 +213,21 @@ describe('refresh token rotation', () => {
   });
 });
 
-describe('your account', () => {
-  it('updates the username, re-issues the access cookie and stages user-updated', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent
-      .post('/api/v1/auth/register')
-      .send({ email: 'bob@luve.dev', username: 'bob', password: 'Password123' })
-      .expect(201);
-
-    const updated = await agent.patch('/api/v1/auth/me').send({ username: 'bobby' }).expect(200);
-    expect(updated.body.username).toBe('bobby');
-    expect(cookies(updated)['jwt']).toBeTruthy();
-
-    const me = await agent.get('/api/v1/auth/me').expect(200);
-    expect(me.body.username).toBe('bobby');
-
-    const topics = (await outboxTopics()).map((message) => message.topic);
-    expect(topics).toContain('auth.user-updated.v1');
+describe('deleting your account', () => {
+  it('needs a signed-in user', async () => {
+    const res = await request(app.getHttpServer()).delete('/api/v1/auth/me').expect(401);
+    expect(res.body.message).toBe('Log in to continue.');
   });
 
-  it('deletes the account, signs out and stages user-deleted', async () => {
+  it('deletes the account and its sessions, signs out and stages user-deleted', async () => {
     const agent = request.agent(app.getHttpServer());
-    await agent
+    const { body: me } = await agent
       .post('/api/v1/auth/register')
-      .send({ email: 'carol@luve.dev', username: 'carol', password: 'Password123' })
+      .send({ email: 'carol@luve.dev', password: 'Password123' })
       .expect(201);
-    const { body: me } = await agent.get('/api/v1/auth/me').expect(200);
 
-    await agent.delete('/api/v1/auth/me').expect(204);
+    const res = await agent.delete('/api/v1/auth/me').expect(204);
+    expect(cookies(res)).toMatchObject({ jwt: '', refresh: '' });
     expect(await prisma.user.count({ where: { id: me.id } })).toBe(0);
     expect(await prisma.session.count({ where: { userId: me.id } })).toBe(0);
 

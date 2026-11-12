@@ -110,6 +110,7 @@ services:
     environment:
       DATABASE_URL: postgresql://luve:luve@postgres:5432/users
       RABBITMQ_URL: amqp://luve:luve@rabbitmq:5672
+      AUTH_JWKS_URL: http://auth:4001/.well-known/jwks.json
 
   auctions:
     <<: *app

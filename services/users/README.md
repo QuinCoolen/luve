@@ -1,23 +1,24 @@
 # users
 
-Public user profiles. The users service never sees passwords or email addresses. It keeps its own copy of what anyone may know about a user, built from the auth service's events.
+Everything about a person except how they log in (that's the auth service): for now the username, later things like a profile picture and location. Never sees passwords or email addresses.
 
 ## API (`/api/v1`, Swagger UI at `/docs/users`)
 
 | Endpoint | Auth | |
 |---|---|---|
-| `GET /users/{id}` | none | public profile: id, username, join date |
+| `GET /users/me` | access token | your profile; `username` is null until you've chosen one |
+| `PATCH /users/me` | access token | set your username (409 if someone has it) |
+| `GET /users/{id}` | none | anyone's public profile: id, username, join date |
 
-Right after someone registers, their profile can take a moment to appear (the auth event is on its way).
+Access tokens are issued by the auth service. `src/auth/jwt-auth.guard.ts` (a copy of auth's guard) checks them with auth's public keys, downloaded once from `AUTH_JWKS_URL`.
 
 ## Events
 
-Consumes from its own queue `luve.users` (src/profiles/auth-events.consumer.ts):
+Consumes from its own queue `luve.users` (`src/profiles/auth-events.consumer.ts`):
 
 | Routing key | Effect |
 |---|---|
-| `auth.user-registered.v1` | create the profile (a second delivery changes nothing) |
-| `auth.user-updated.v1` | update the username |
+| `auth.user-registered.v1` | create the (empty) profile; a second delivery changes nothing |
 | `auth.user-deleted.v1` | delete the profile |
 
 A message that breaks its contract, or fails for another reason, is rejected and ends up in `luve.dead-letters` (RabbitMQ UI, http://localhost:15673).

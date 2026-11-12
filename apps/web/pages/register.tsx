@@ -32,15 +32,15 @@ export default function Register() {
 
     try {
       // Registering also signs you in (the auth service sets the session cookies).
-      const user = await register.mutateAsync({
+      const account = await register.mutateAsync({
         data: {
-          username: String(formData.get("username") ?? ""),
           email: String(formData.get("email") ?? ""),
           password,
         },
       });
-      signedIn(user);
-      await router.push("/");
+      // Step 2: the users service holds your username. Pick one next.
+      signedIn({ id: account.id, username: null });
+      await router.push("/choose-username");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err);
@@ -61,14 +61,6 @@ export default function Register() {
             onSubmit={handleRegister}
             className="flex flex-col items-center justify-center gap-4"
           >
-            <Input
-              type="text"
-              placeholder="Username"
-              name="username"
-              autoComplete="username"
-              required
-            />
-            <FieldErrors error={error} field="username" />
             <Input type="email" placeholder="Email" name="email" required />
             <FieldErrors error={error} field="email" />
 

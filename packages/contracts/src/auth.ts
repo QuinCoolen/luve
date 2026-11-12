@@ -2,9 +2,8 @@ import { z } from 'zod';
 import { defineEvent } from './envelope.js';
 
 /**
- * Events published by the auth service. Other services keep the bits of
- * user data they need (a seller's username, an email address for
- * notifications) from these, instead of calling auth.
+ * Events published by the auth service: an account was created or deleted.
+ * Profile data (username, picture, …) belongs to the users service, not here.
  */
 
 export const UserRegisteredV1 = defineEvent(
@@ -12,17 +11,7 @@ export const UserRegisteredV1 = defineEvent(
   z.object({
     userId: z.uuid(),
     email: z.email(),
-    username: z.string(),
     registeredAt: z.iso.datetime({ offset: true }),
-  }),
-);
-
-export const UserUpdatedV1 = defineEvent(
-  'auth.user-updated.v1',
-  z.object({
-    userId: z.uuid(),
-    email: z.email(),
-    username: z.string(),
   }),
 );
 
@@ -33,4 +22,4 @@ export const UserDeletedV1 = defineEvent(
   }),
 );
 
-export const authEvents = [UserRegisteredV1, UserUpdatedV1, UserDeletedV1] as const;
+export const authEvents = [UserRegisteredV1, UserDeletedV1] as const;

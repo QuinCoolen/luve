@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/auth";
-import { me, useLogin } from "@/api/generated/auth/endpoints";
+import { useLogin } from "@/api/generated/auth/endpoints";
+import { me } from "@/api/generated/users/endpoints";
 import { ApiError, refreshSession } from "@/api/mutator/axios";
 import { FieldErrors } from "@/components/field-errors";
 
@@ -41,14 +42,16 @@ export default function Login() {
     const formData = new FormData(e.currentTarget);
 
     try {
-      const user = await login.mutateAsync({
+      await login.mutateAsync({
         data: {
           email: String(formData.get("email") ?? ""),
           password: String(formData.get("password") ?? ""),
         },
       });
+      // Signed in with the auth service; your profile comes from the users service.
+      const user = await me();
       signedIn(user);
-      await router.push(next);
+      await router.push(user.username ? next : "/choose-username");
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err);

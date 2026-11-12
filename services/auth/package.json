@@ -18,11 +18,9 @@
     "lint": "oxlint src",
     "test": "vitest run",
     "openapi:export": "node --env-file=.env.example dist/openapi.js",
-    "start:migrate": "prisma migrate deploy && node dist/main.js",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "keys:generate": "node scripts/generate-keys.ts",
-    "seed": "node scripts/seed.ts"
+    "keys:generate": "node scripts/generate-keys.ts"
   },
   "dependencies": {
     "@luve/contracts": "workspace:*",

@@ -3,29 +3,25 @@ packages:
   - services/*
   - packages/*
 
-# One version of each shared dependency for the whole monorepo. Packages refer
-# to these with `"<name>": "catalog:"`, which keeps a single copy of NestJS in
-# node_modules (two copies break DI and `instanceof HttpException`).
 catalog:
+  '@nestjs/cli': ^12.0.12
   '@nestjs/common': ^12.4.2
   '@nestjs/config': ^12.1.1
   '@nestjs/core': ^12.4.2
   '@nestjs/platform-express': ^12.4.2
   '@nestjs/swagger': ^12.1.1
   '@nestjs/testing': ^12.4.2
-  '@nestjs/cli': ^12.0.12
   '@prisma/adapter-pg': ~7.10.1
   '@prisma/client': ~7.10.1
-  '@types/cookie-parser': ^1.4.10
+  '@types/cookie-parser': 1.4.10
   '@types/express': ^5.0.6
   '@types/node': ^24.19.2
   '@types/pg': ^8.23.1
   '@types/supertest': ^7.2.1
-  cookie-parser: ^1.4.7
+  cookie-parser: 1.4.7
   dotenv: ^18.0.10
-  jose: ^6.2.17
+  jose: 6.2.17
   pg: ^8.23.1
-  # Pinned to 7.x: npm's `latest` tag for prisma currently points at 8.0 prereleases.
   prisma: ~7.10.1
   reflect-metadata: ^0.2.2
   rxjs: ^7.8.2
@@ -36,7 +32,8 @@ catalog:
   zod: ^4.6.7
   zod-openapi: ^6.0.2
 
-# Packages allowed to run install scripts.
+forceLegacyDeploy: true
+
 onlyBuiltDependencies:
   - '@nestjs/core'
   - '@prisma/engines'
@@ -44,6 +41,3 @@ onlyBuiltDependencies:
   - esbuild
   - sharp
   - unrs-resolver
-
-# `pnpm deploy` (used by services/Dockerfile) without injected workspace packages.
-forceLegacyDeploy: true

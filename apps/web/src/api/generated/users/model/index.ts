@@ -6,4 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './me';
 export * from './publicProfile';
+export * from './updateMeRequest';

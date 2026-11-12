@@ -5,8 +5,8 @@ Each phase ships working code end to end (service + events + frontend) and gets 
 | # | Phase | Status |
 |---|---|---|
 | 0 | **Foundation**: monorepo (pnpm + Turborepo), NestJS 12 / ESM, service shells, Docker infra, Traefik gateway, per-service CI | done |
-| 1 | **Auth + users**: register, login, refresh rotation with reuse detection, logout, `/auth/me`, JWKS, JWT guard; users service with public profiles fed by auth's events (first consumer, dead-letter queue); `@luve/contracts`, outbox publishing (`@nestjs/outbox` → RabbitMQ); gateway rate limit; web login/register switched over with silent refresh | done |
-| 2 | **Auctions** *(next)*: create/list (cursor)/detail/mine, local copy of seller names from auth's events, verify access tokens with auth's JWKS (copy the guard or extract it, decided then); web auction pages switched over | planned |
+| 1 | **Auth + users**: register, login, refresh rotation with reuse detection, logout, account deletion, JWKS, JWT guard; users service with profiles (username via two-step sign-up), created and deleted by auth's events (first consumer, dead-letter queue); `@luve/contracts`, outbox publishing (`@nestjs/outbox` → RabbitMQ); gateway rate limit; web login/register switched over with silent refresh | done |
+| 2 | **Auctions** *(next)*: create/list (cursor)/detail/mine, local copy of seller names (users starts publishing profile events), verify access tokens with auth's JWKS (third copy of the guard: copy it or extract a package, decided then); web auction pages switched over | planned |
 | 3 | **Bidding**: event-sourced aggregate, commands/queries, projector + relay, closing scheduler + sweeper, cancellation saga; web bid form via REST | planned |
 | 4 | **Realtime**: Socket.IO gateway fed by events; web moves from SignalR to socket.io-client | planned |
 | 5 | **Payments**: Stripe checkout (winner only) + signed webhooks | planned |

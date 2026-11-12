@@ -6,12 +6,6 @@ export const EmailSchema = z
   .max(254)
   .transform((email) => email.toLowerCase());
 
-export const UsernameSchema = z
-  .string()
-  .min(3, { error: 'Username must be at least 3 characters.' })
-  .max(30, { error: 'Username must be at most 30 characters.' })
-  .regex(/^[a-zA-Z0-9_]+$/, { error: 'Use only letters, numbers and underscores.' });
-
 /**
  * At least 8 characters with a letter and a digit. The 128 cap stops someone
  * from making argon2 hash a megabyte-long "password".
@@ -26,7 +20,6 @@ export const PasswordSchema = z
 export const RegisterRequestSchema = z
   .object({
     email: EmailSchema,
-    username: UsernameSchema,
     password: PasswordSchema,
   })
   .meta({ id: 'RegisterRequest' });
@@ -41,22 +34,11 @@ export const LoginRequestSchema = z
   .meta({ id: 'LoginRequest' });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
-/** The signed-in user, as returned to themselves. */
-export const MeSchema = z
+/** The account you just registered or logged in to. Your profile is at GET /users/me. */
+export const AccountSchema = z
   .object({
     id: z.uuid(),
     email: z.email(),
-    username: z.string(),
-    createdAt: z.iso.datetime({ offset: true }),
   })
-  .meta({ id: 'Me' });
-export type Me = z.infer<typeof MeSchema>;
-
-export function toMe(user: { id: string; email: string; username: string; createdAt: Date }): Me {
-  return {
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    createdAt: user.createdAt.toISOString(),
-  };
-}
+  .meta({ id: 'Account' });
+export type Account = z.infer<typeof AccountSchema>;

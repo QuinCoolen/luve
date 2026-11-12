@@ -25,19 +25,16 @@ describe('access tokens', () => {
     const cfg = config({ JWT_PRIVATE_KEY: Buffer.from(pem).toString('base64') });
     const keys = new SigningKeys(cfg);
     const tokens = new AccessTokens(keys, cfg);
-    const token = await tokens.issue({ id: 'u-1', username: 'alice' });
+    const token = await tokens.issue('u-1');
 
     expect(decodeProtectedHeader(token)).toMatchObject({ alg: 'EdDSA', kid: 'test-key' });
     expect(keys.publicJwk).not.toHaveProperty('d'); // never publish the private part
-    await expect(tokens.verify(token)).resolves.toEqual({ id: 'u-1', username: 'alice' });
+    await expect(tokens.verify(token)).resolves.toEqual({ id: 'u-1' });
   });
 
   it('reject a token signed with another key', async () => {
     const cfg = config({});
-    const token = await new AccessTokens(new SigningKeys(cfg), cfg).issue({
-      id: 'u-1',
-      username: 'alice',
-    });
+    const token = await new AccessTokens(new SigningKeys(cfg), cfg).issue('u-1');
     const otherKeys = new AccessTokens(new SigningKeys(cfg), cfg);
     await expect(otherKeys.verify(token)).rejects.toBeInstanceOf(
       errors.JWSSignatureVerificationFailed,

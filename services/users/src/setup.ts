@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { zodSchemaConverter } from './zod-schema-converter.js';
 
 /** Every endpoint lives under /api/v1/... (that's what the gateway routes on). */
@@ -21,6 +22,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setDescription('Public user profiles.')
     .setVersion('1.0.0')
     .addServer('/')
+    .addCookieAuth('jwt')
     .build();
   return SwaggerModule.createDocument(app, config, {
     // Operation ids become the web client's function names: getProfile → useGetProfile.
@@ -31,8 +33,11 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
 
 /** Used by main.ts and the e2e tests, so tests run the app exactly like production. */
 export function setupApp(app: INestApplication): void {
+  // The access token arrives as the `jwt` cookie.
+  app.use(cookieParser());
   applyRouting(app);
-  // Validates @Param({ schema }) with Zod; a failure is a 400.
+  // Validates @Body/@Param({ schema }) with Zod. A failure is a 400 whose
+  // `message` lists every problem as `field: message`.
   app.useGlobalPipes(new StandardSchemaValidationPipe());
   // Shapes responses with @SerializeOptions({ schema }).
   app.useGlobalInterceptors(new StandardSchemaSerializerInterceptor(app.get(Reflector)));

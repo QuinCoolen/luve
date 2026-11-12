@@ -21,7 +21,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Me"
+                  "$ref": "#/components/schemas/Account"
                 }
               }
             }
@@ -30,7 +30,7 @@
             "description": "Validation failed"
           },
           "409": {
-            "description": "Email or username already taken"
+            "description": "Email already registered"
           }
         },
         "tags": [
@@ -58,7 +58,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Me"
+                  "$ref": "#/components/schemas/Account"
                 }
               }
             }
@@ -107,76 +107,6 @@
       }
     },
     "/api/v1/auth/me": {
-      "get": {
-        "operationId": "me",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "The signed-in user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in, or the access token expired"
-          }
-        },
-        "security": [
-          {
-            "cookie": []
-          }
-        ],
-        "tags": [
-          "account"
-        ]
-      },
-      "patch": {
-        "operationId": "updateMe",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAccountRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Account updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation failed"
-          },
-          "401": {
-            "description": "Not signed in, or the access token expired"
-          },
-          "409": {
-            "description": "Email or username already taken"
-          }
-        },
-        "security": [
-          {
-            "cookie": []
-          }
-        ],
-        "tags": [
-          "account"
-        ]
-      },
       "delete": {
         "operationId": "deleteMe",
         "parameters": [],
@@ -194,7 +124,7 @@
           }
         ],
         "tags": [
-          "account"
+          "auth"
         ]
       }
     }
@@ -229,12 +159,6 @@
             "format": "email",
             "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
           },
-          "username": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 30,
-            "pattern": "^[a-zA-Z0-9_]+$"
-          },
           "password": {
             "type": "string",
             "minLength": 8,
@@ -253,11 +177,10 @@
         },
         "required": [
           "email",
-          "username",
           "password"
         ]
       },
-      "Me": {
+      "Account": {
         "type": "object",
         "properties": {
           "id": {
@@ -269,21 +192,11 @@
             "type": "string",
             "format": "email",
             "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-          },
-          "username": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           }
         },
         "required": [
           "id",
-          "email",
-          "username",
-          "createdAt"
+          "email"
         ],
         "additionalProperties": false
       },
@@ -306,23 +219,6 @@
           "email",
           "password"
         ]
-      },
-      "UpdateAccountRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "maxLength": 254,
-            "format": "email",
-            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-          },
-          "username": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 30,
-            "pattern": "^[a-zA-Z0-9_]+$"
-          }
-        }
       }
     }
   }

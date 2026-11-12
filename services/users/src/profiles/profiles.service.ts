@@ -1,11 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Profile } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { Me } from './profiles.schemas.js';
 
-/**
- * Profiles are a copy of what the auth service knows. Each write below is safe
- * to run twice, because RabbitMQ may deliver the same event more than once.
- */
 @Injectable()
 export class ProfilesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,20 +15,45 @@ export class ProfilesService {
     return profile;
   }
 
-  /** Creates the profile; a second delivery finds it already there and changes nothing. */
-  async create(userId: string, username: string, createdAt: Date): Promise<void> {
+  async findMine(userId: string): Promise<Me> {
+    const profile = await this.prisma.profile.findUnique({ where: { userId } });
+    return { id: userId, username: profile?.username ?? null };
+  }
+
+  /**
+   * Sets your username. If auth's user-registered event hasn't arrived yet,
+   * this creates the profile; the event then only adds the registration date.
+   */
+  async setUsername(userId: string, username: string): Promise<Me> {
+    try {
+      const profile = await this.prisma.profile.upsert({
+        where: { userId },
+        create: { userId, username, createdAt: new Date() },
+        update: { username },
+      });
+      return { id: profile.userId, username: profile.username };
+    } catch (error) {
+      // The unique index on username is what guarantees no two users share one.
+      if ((error as { code?: unknown } | null)?.code === 'P2002') {
+        throw new ConflictException(['username: This username is taken.']);
+      }
+      throw error;
+    }
+  }
+
+  // The two methods below run when auth's events arrive. RabbitMQ may deliver
+  // the same event twice, so both are safe to run again.
+
+  /** Creates the empty profile, or (if the user was quicker) records when they registered. */
+  async created(userId: string, registeredAt: Date): Promise<void> {
     await this.prisma.profile.upsert({
       where: { userId },
-      create: { userId, username, createdAt },
-      update: {},
+      create: { userId, createdAt: registeredAt },
+      update: { createdAt: registeredAt },
     });
   }
 
-  async rename(userId: string, username: string): Promise<void> {
-    await this.prisma.profile.updateMany({ where: { userId }, data: { username } });
-  }
-
-  async delete(userId: string): Promise<void> {
+  async deleted(userId: string): Promise<void> {
     await this.prisma.profile.deleteMany({ where: { userId } });
   }
 }

@@ -1,10 +1,10 @@
 import type { GetServerSidePropsContext, Redirect } from "next";
-import { me } from "@/api/generated/auth/endpoints";
-import type { Me } from "@/api/generated/auth/model";
+import { me } from "@/api/generated/users/endpoints";
+import type { Me } from "@/api/generated/users/model";
 
 /**
  * Resolves the signed-in user during SSR by forwarding the browser's cookies
- * to the auth service (GET /api/v1/auth/me through the gateway). Returns null when
+ * to the users service (GET /api/v1/users/me through the gateway). Returns null when
  * there is no valid access token.
  */
 export async function getSessionUser(context: GetServerSidePropsContext): Promise<Me | null> {

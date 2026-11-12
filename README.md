@@ -28,8 +28,8 @@ flowchart LR
 | Path | What |
 |---|---|
 | [`apps/web`](apps/web) | Next.js frontend; typed API clients generated with Orval from each service's OpenAPI |
-| [`services/auth`](services/auth) | accounts, sessions, access tokens (JWT + JWKS) |
-| [`services/users`](services/users) | public profiles, kept in sync with auth's events |
+| [`services/auth`](services/auth) | logging in: accounts (email + password), sessions, access tokens (JWT + JWKS) |
+| [`services/users`](services/users) | profiles: username (later picture, location, …) |
 | [`services/auctions`](services/auctions) | auction listings and lifecycle |
 | [`services/bidding`](services/bidding) | bidding, **event-sourced** with [`@ocoda/event-sourcing`](https://github.com/ocoda/event-sourcing) |
 | [`services/payments`](services/payments) | Stripe checkout for won auctions |
@@ -64,7 +64,7 @@ First time? Create demo accounts and a stable token-signing key:
 pnpm --filter @luve/auth db:deploy        # apply the migrations
 pnpm --filter @luve/users db:deploy
 pnpm --filter @luve/auth keys:generate    # optional: tokens survive restarts
-pnpm --filter @luve/auth seed             # alice@luve.dev / bob@luve.dev, password Password123
+pnpm seed                                 # with `pnpm dev` running: alice@luve.dev / bob@luve.dev, password Password123
 ```
 
 Or run everything in containers: `pnpm stack:up` (and `pnpm stack:down`).

@@ -59,12 +59,18 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              <span
-                className="hidden md:inline text-sm text-muted-foreground"
-                data-testid="signed-in-user"
-              >
-                {user.username}
-              </span>
+              {user.username ? (
+                <span
+                  className="hidden md:inline text-sm text-muted-foreground"
+                  data-testid="signed-in-user"
+                >
+                  {user.username}
+                </span>
+              ) : (
+                <Link href="/choose-username" className="text-sm font-medium text-primary">
+                  Choose a username
+                </Link>
+              )}
               <Button
                 asChild
                 variant="default"

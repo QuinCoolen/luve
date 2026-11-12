@@ -6,8 +6,8 @@ Luve is split into small NestJS services that each own their data and talk to ea
 
 | Service | Owns | Storage | Publishes | Consumes |
 |---|---|---|---|---|
-| **auth** | accounts (email, username, password hash), sessions, JWT signing keys (JWKS) | Postgres (Prisma) + outbox | `user-registered`, `user-updated`, `user-deleted` | none |
-| **users** | public profiles: a copy of each user's id, username and join date | Postgres (Prisma) | none | auth `user-*` |
+| **auth** | logging in: accounts (email, password hash), sessions, JWT signing keys (JWKS) | Postgres (Prisma) + outbox | `user-registered`, `user-deleted` | none |
+| **users** | profiles: username (later picture, location, …) | Postgres (Prisma) | none yet | auth `user-registered`, `user-deleted` |
 | **auctions** | listings, images, lifecycle status, a local copy of seller names | Postgres (Prisma) + outbox/inbox | `auction-published`, `auction-cancellation-requested`, `auction-status-changed` | auth `user-*`; bidding `bid-placed`, `bidding-extended`, `bidding-closed`, `bidding-cancelled`, `cancellation-rejected`; payments `*` |
 | **bidding** | bidding per auction (**ES + CQRS**) | event store (Postgres schema `eventstore`) + read models (Prisma, schema `public`) | `bidding-opened`, `bid-placed`, `bidding-extended`, `bidding-closed`, `bidding-cancelled`, `cancellation-rejected` | auctions `auction-published`, `auction-cancellation-requested` |
 | **payments** | Stripe checkout + webhook, who has to pay how much | Postgres (Prisma) + outbox/inbox | `checkout-started`, `payment-succeeded`, `payment-expired` | bidding `bidding-closed`; auctions `auction-published` |
@@ -40,7 +40,9 @@ Because web and API share an origin there is no CORS, and the auth cookies are p
 
 ## Authentication
 
-The auth service signs short-lived access tokens (Ed25519 JWT, 15 min) and publishes its public keys at `/.well-known/jwks.json`. Services verify tokens **locally** against those keys; nobody calls auth per request. (Today only auth has protected routes; its `JwtAuthGuard` verifies with the key directly.) The browser holds the tokens in httpOnly cookies (`jwt`, and `refresh` scoped to `/api/v1/auth`). Refresh tokens rotate on every use, and reusing an old one revokes the whole session family.
+The auth service signs short-lived access tokens (Ed25519 JWT, 15 min) and publishes its public keys at `/.well-known/jwks.json`. A token only carries the user id (`sub`); profile data such as the username comes from the users service. Services verify tokens **locally**: auth with its own key, users with the public keys it downloads once from auth. Nobody calls auth per request.
+
+Signing up takes two steps: `POST /auth/register` (email + password, which also signs you in), then `PATCH /users/me` to choose a username. See [ADR 0007](adr/0007-split-auth-and-users.md). The browser holds the tokens in httpOnly cookies (`jwt`, and `refresh` scoped to `/api/v1/auth`). Refresh tokens rotate on every use, and reusing an old one revokes the whole session family.
 
 ## Messaging
 

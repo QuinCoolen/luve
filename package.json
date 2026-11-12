@@ -16,6 +16,7 @@
     "openapi": "turbo run openapi:export",
     "api:generate": "turbo run api:generate --filter=@luve/web",
     "env:init": "node scripts/env-init.mjs",
+    "seed": "node scripts/seed.ts",
     "format": "prettier --write .",
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",

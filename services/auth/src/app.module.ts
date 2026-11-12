@@ -1,7 +1,6 @@
 import { MessagingModule } from '@luve/messaging';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AccountModule } from './account/account.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { envSchema } from './env.js';
 import { KeysModule } from './keys/keys.module.js';
@@ -19,7 +18,6 @@ import { PrismaService } from './prisma/prisma.service.js';
     }),
     KeysModule,
     AuthModule,
-    AccountModule,
   ],
 })
 export class AppModule {}

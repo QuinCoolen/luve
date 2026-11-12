@@ -2,16 +2,19 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Post,
   Req,
   Res,
   SerializeOptions,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -19,18 +22,19 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { AccessTokens } from '../keys/access-tokens.js';
+import { AccessTokens, type TokenUser } from '../keys/access-tokens.js';
 import { AuthCookies, REFRESH_TOKEN_COOKIE } from './auth-cookies.js';
 import {
+  type Account,
+  AccountSchema,
   type LoginRequest,
   LoginRequestSchema,
-  type Me,
-  MeSchema,
   type RegisterRequest,
   RegisterRequestSchema,
-  toMe,
 } from './auth.schemas.js';
 import { AuthService, type SignedIn } from './auth.service.js';
+import { CurrentUser } from './current-user.decorator.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { type ClientInfo, invalidRefreshToken } from './sessions.js';
 
 function clientInfo(req: Request): ClientInfo {
@@ -50,32 +54,34 @@ export class AuthController {
     private readonly accessTokens: AccessTokens,
   ) {}
 
+  /** Creates the account and signs in. The username is chosen next, on the users service. */
   @Post('register')
-  @SerializeOptions({ schema: MeSchema })
-  @ApiCreatedResponse({ description: 'Account created and signed in', standardSchema: MeSchema })
+  @SerializeOptions({ schema: AccountSchema })
+  @ApiCreatedResponse({
+    description: 'Account created and signed in',
+    standardSchema: AccountSchema,
+  })
   @ApiBadRequestResponse({ description: 'Validation failed' })
-  @ApiConflictResponse({ description: 'Email or username already taken' })
+  @ApiConflictResponse({ description: 'Email already registered' })
   async register(
     @Body({ schema: RegisterRequestSchema }) body: RegisterRequest,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<Me> {
-    const signedIn = await this.auth.register(body, clientInfo(req));
-    return this.signIn(res, signedIn);
+  ): Promise<Account> {
+    return this.signIn(res, await this.auth.register(body, clientInfo(req)));
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: MeSchema })
-  @ApiOkResponse({ description: 'Signed in', standardSchema: MeSchema })
+  @SerializeOptions({ schema: AccountSchema })
+  @ApiOkResponse({ description: 'Signed in', standardSchema: AccountSchema })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   async login(
     @Body({ schema: LoginRequestSchema }) body: LoginRequest,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<Me> {
-    const signedIn = await this.auth.login(body, clientInfo(req));
-    return this.signIn(res, signedIn);
+  ): Promise<Account> {
+    return this.signIn(res, await this.auth.login(body, clientInfo(req)));
   }
 
   /** Rotates the refresh cookie and issues a new access cookie. */
@@ -112,9 +118,24 @@ export class AuthController {
     this.cookies.clear(res);
   }
 
-  private signIn(res: Response, signedIn: SignedIn): Me {
+  /** Deletes your account. The users service removes your profile when the event arrives. */
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth()
+  @ApiNoContentResponse({ description: 'Account deleted and signed out' })
+  @ApiUnauthorizedResponse({ description: 'Not signed in, or the access token expired' })
+  async deleteMe(
+    @CurrentUser() user: TokenUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.auth.deleteAccount(user.id);
+    this.cookies.clear(res);
+  }
+
+  private signIn(res: Response, signedIn: SignedIn): Account {
     this.cookies.setAccessToken(res, signedIn.accessToken, this.accessTokens.ttlSeconds);
     this.cookies.setRefreshToken(res, signedIn.refresh);
-    return toMe(signedIn.user);
+    return signedIn.account;
   }
 }

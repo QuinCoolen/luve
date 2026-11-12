@@ -1,6 +1,7 @@
-// Users service schema: the public side of every user. Rows are created,
-// renamed and deleted by the auth.user-* events (src/profiles/auth-events.consumer.ts);
-// nothing writes them over HTTP.
+// Users service schema: everything about a person except how they log in
+// (that's the auth service). A profile is created when auth's user-registered
+// event arrives (src/profiles/auth-events.consumer.ts), and deleted with
+// user-deleted. The user fills it in through PATCH /users/me.
 
 generator client {
   provider            = "prisma-client"
@@ -17,7 +18,8 @@ datasource db {
 model Profile {
   /// The same id the user has in the auth service.
   userId    String   @id @map("user_id") @db.Uuid
-  username  String
+  /// Chosen after registering, so empty until then.
+  username  String?  @unique
   /// When the user registered.
   createdAt DateTime @map("created_at") @db.Timestamptz(3)
 
