@@ -28,7 +28,6 @@ test.describe('Authentication Validation Tests', () => {
       await expect(page).toHaveURL('http://localhost:3000/register');
 
       // Fill form with invalid email
-      await page.getByPlaceholder('Username').fill('testuser');
       await page.getByPlaceholder('Email').fill('invalid-email');
       await page.getByPlaceholder('Password', { exact: true }).fill('password123');
       await page.getByPlaceholder('Confirm Password', { exact: true }).fill('password123');
@@ -49,7 +48,6 @@ test.describe('Authentication Validation Tests', () => {
       await expect(page).toHaveURL('http://localhost:3000/register');
 
       // Fill form with short password
-      await page.getByPlaceholder('Username').fill('testuser');
       await page.getByPlaceholder('Email').fill('test@example.com');
       await page.getByPlaceholder('Password', { exact: true }).fill('123');
       await page.getByPlaceholder('Confirm Password', { exact: true }).fill('123');
@@ -145,10 +143,6 @@ test.describe('Authentication Validation Tests', () => {
       await page.click('text=Sign Up');
       await expect(page).toHaveURL('http://localhost:3000/register');
 
-      // Focus and blur username field
-      await page.getByPlaceholder('Username').focus();
-      await page.getByPlaceholder('Username').blur();
-
       // Focus and blur email field
       await page.getByPlaceholder('Email').focus();
       await page.getByPlaceholder('Email').blur();
@@ -175,9 +169,6 @@ test.describe('Authentication Validation Tests', () => {
       // Try to submit empty form to trigger validation
       await page.getByRole('button', { name: 'Register' }).click();
       await page.waitForTimeout(500);
-
-      // Start typing in username field
-      await page.getByPlaceholder('Username').fill('test');
 
       // Start typing in email field
       await page.getByPlaceholder('Email').fill('test@');
