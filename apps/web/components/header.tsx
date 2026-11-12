@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/context/auth";
-import { userService } from "@/services/api";
 import { Gavel, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,8 +10,7 @@ export default function Header() {
   const { user, logout } = useContext(AuthContext);
 
   const handleLogout = async () => {
-    await userService.logout();
-    logout();
+    await logout();
   };
 
   return (
@@ -61,6 +59,18 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              {user.username ? (
+                <span
+                  className="hidden md:inline text-sm text-muted-foreground"
+                  data-testid="signed-in-user"
+                >
+                  {user.username}
+                </span>
+              ) : (
+                <Link href="/choose-username" className="text-sm font-medium text-primary">
+                  Choose a username
+                </Link>
+              )}
               <Button
                 asChild
                 variant="default"

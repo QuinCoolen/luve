@@ -2,46 +2,50 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
-import { userService } from "@/services/api";
-import { ValidationError } from "@/types/user";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { AuthContext } from "@/context/auth";
+import { useRegister } from "@/api/generated/auth/endpoints";
+import { ApiError } from "@/api/mutator/axios";
+import { FieldErrors } from "@/components/field-errors";
 
 export default function Register() {
   const router = useRouter();
-  const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
+  const { signedIn } = useContext(AuthContext);
+  const register = useRegister();
+  const [error, setError] = useState<ApiError | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
+    setConfirmError(null);
 
-    const formData = new FormData(e.target as HTMLFormElement);
-    const username = formData.get("username");
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const confirmPassword = formData.get("confirmPassword");
-
-    if (password !== confirmPassword) {
-      setErrors({ ConfirmPassword: ["Passwords do not match"] });
+    const formData = new FormData(e.currentTarget);
+    const password = String(formData.get("password") ?? "");
+    if (password !== formData.get("confirmPassword")) {
+      setConfirmError("Passwords do not match");
       return;
     }
 
     try {
-      await userService.register({
-        username: username as string,
-        email: email as string,
-        password: password as string,
+      // Registering also signs you in (the auth service sets the session cookies).
+      const account = await register.mutateAsync({
+        data: {
+          email: String(formData.get("email") ?? ""),
+          password,
+        },
       });
-      router.push("/login");
-    } catch (error) {
-      console.log("Error");
-      if (error instanceof ValidationError) {
-        console.log("ValidationError");
-        setErrors(error.errors);
-        console.log(errors);
+      // Step 2: the users service holds your username. Pick one next.
+      signedIn({ id: account.id, username: null });
+      await router.push("/choose-username");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err);
       } else {
-        console.error(error);
+        console.error(err);
       }
     }
   }
@@ -57,25 +61,8 @@ export default function Register() {
             onSubmit={handleRegister}
             className="flex flex-col items-center justify-center gap-4"
           >
-            <Input
-              type="text"
-              placeholder="Username"
-              name="username"
-              required
-            />
-            {errors.UserName &&
-              errors.UserName.map((error, index) => (
-                <p key={index} className="text-red-500">
-                  {error}
-                </p>
-              ))}
             <Input type="email" placeholder="Email" name="email" required />
-            {errors.Email &&
-              errors.Email.map((error, index) => (
-                <p key={index} className="text-red-500">
-                  {error}
-                </p>
-              ))}
+            <FieldErrors error={error} field="email" />
 
             <div className="relative w-full">
               <Input
@@ -94,12 +81,7 @@ export default function Register() {
                 {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
-            {errors.Password &&
-              errors.Password.map((error, index) => (
-                <p key={index} className="text-red-500">
-                  {error}
-                </p>
-              ))}
+            <FieldErrors error={error} field="password" />
 
             <div className="relative w-full">
               <Input
@@ -122,13 +104,13 @@ export default function Register() {
                 {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
-            {errors.ConfirmPassword &&
-              errors.ConfirmPassword.map((error, index) => (
-                <p key={index} className="text-red-500">
-                  {error}
-                </p>
-              ))}
-            <Button className="place-self-end" type="submit">
+            {confirmError && <p className="w-full text-sm text-red-500">{confirmError}</p>}
+            {error?.generalErrors().map((message) => (
+              <p key={message} className="w-full text-sm text-red-500">
+                {message}
+              </p>
+            ))}
+            <Button className="place-self-end" type="submit" disabled={register.isPending}>
               Register
             </Button>
           </form>

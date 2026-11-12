@@ -1,5 +1,5 @@
 # Reusable pipeline for one NestJS service. Each services/<name> has a small
-# workflow (identity.yml, auctions.yml, …) that triggers only on changes to
+# workflow (auth.yml, auctions.yml, …) that triggers only on changes to
 # that service or the shared packages, then calls this file.
 name: service
 
@@ -7,7 +7,7 @@ on:
   workflow_call:
     inputs:
       service:
-        description: Folder name under services/ (e.g. identity)
+        description: Folder name under services/ (e.g. auth)
         required: true
         type: string
       web-client:
@@ -40,8 +40,9 @@ jobs:
       - name: Lint, typecheck, test, build
         run: pnpm turbo run lint typecheck test build --filter=@luve/${{ inputs.service }}...
 
+      # Only services with endpoints have an openapi:export script.
       - name: Export OpenAPI
-        run: pnpm --filter @luve/${{ inputs.service }} openapi:export
+        run: pnpm --filter @luve/${{ inputs.service }} run --if-present openapi:export
 
       - name: Regenerate web client
         if: inputs.web-client

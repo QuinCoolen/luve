@@ -1,0 +1,34 @@
+name: auth
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - services/auth/**
+      - apps/web/orval.config.ts
+      - apps/web/src/api/generated/auth/**
+      - packages/**
+      - services/Dockerfile
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .github/workflows/_service.yml
+      - .github/workflows/auth.yml
+  pull_request:
+    paths: *paths
+  # Run by hand from the Actions tab (path filters can't see a branch's first push).
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  auth:
+    uses: ./.github/workflows/_service.yml
+    with:
+      service: auth
+      web-client: true
+    permissions:
+      contents: read
+      packages: write

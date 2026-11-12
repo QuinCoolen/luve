@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 #
 # One Dockerfile for every NestJS service:
-#   docker build -f services/Dockerfile --build-arg SERVICE=identity .
+#   docker build -f services/Dockerfile --build-arg SERVICE=auth .
 #
 # 1. prune:   `turbo prune` cuts the monorepo down to the service and the
 #             workspace packages it depends on (plus a pruned lockfile).
@@ -30,6 +30,8 @@ RUN turbo run build --filter=@luve/${SERVICE}
 RUN pnpm --filter @luve/${SERVICE} deploy --prod --legacy /out
 
 FROM node:${NODE_VERSION} AS runtime
+# OpenSSL for Prisma's schema engine (migrate deploy) on Alpine.
+RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out .

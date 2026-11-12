@@ -2,37 +2,61 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
-import { userService } from "@/services/api";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/auth";
-import { NotFoundError, ValidationError } from "@/types/user";
+import { useLogin } from "@/api/generated/auth/endpoints";
+import { me } from "@/api/generated/users/endpoints";
+import { ApiError, refreshSession } from "@/api/mutator/axios";
+import { FieldErrors } from "@/components/field-errors";
+
+/** Only allow same-site relative paths as a post-login destination. */
+function safeNext(value: unknown): string {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useContext(AuthContext);
-  const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
+  const { signedIn } = useContext(AuthContext);
+  const login = useLogin();
+  const [error, setError] = useState<ApiError | null>(null);
+  const next = safeNext(router.query.next);
+
+  // Sent here by an SSR auth check? The access token may just have expired:
+  // try the refresh cookie before asking for a password.
+  useEffect(() => {
+    if (!router.isReady || router.query.next === undefined) return;
+    refreshSession()
+      .then(() => me())
+      .then((user) => {
+        signedIn(user);
+        void router.replace(next);
+      })
+      .catch(() => {
+        /* no session: show the form */
+      });
+  }, [router.isReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    const formData = new FormData(e.target as HTMLFormElement);
-    const email = formData.get("email");
-    const password = formData.get("password");
+    setError(null);
+    const formData = new FormData(e.currentTarget);
 
     try {
-      const user = await userService.login({ email: email as string, password: password as string });
-      if (!user) {
-        throw new Error("Failed to login");
-      }
-      login();
-      router.push("/");
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        setErrors(error.errors);
-      } else if (error instanceof NotFoundError) {
-        setErrors({ NotFound: [error.message] });
+      await login.mutateAsync({
+        data: {
+          email: String(formData.get("email") ?? ""),
+          password: String(formData.get("password") ?? ""),
+        },
+      });
+      // Signed in with the auth service; your profile comes from the users service.
+      const user = await me();
+      signedIn(user);
+      await router.push(user.username ? next : "/choose-username");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err);
       } else {
-        console.error(error);
+        console.error(err);
       }
     }
   }
@@ -45,22 +69,27 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="flex flex-col items-center justify-center gap-4">
-            {errors.NotFound && errors.NotFound.map((error, index) => (
-              <p key={index} className="text-red-500">{error}</p>
+            {error?.generalErrors().map((message) => (
+              <p key={message} className="text-red-500">
+                {message}
+              </p>
             ))}
-            <Input type="email" placeholder="Email" name="email" required />
-            {errors.Email && errors.Email.map((error, index) => (
-              <p key={index} className="text-red-500">{error}</p>
-            ))}
-            <Input type="password" placeholder="Password" name="password" required />
-            {errors.Password && errors.Password.map((error, index) => (
-              <p key={index} className="text-red-500">{error}</p>
-            ))}
-            <Button className="place-self-end" type="submit">Login</Button>
+            <Input type="email" placeholder="Email" name="email" autoComplete="email" required />
+            <FieldErrors error={error} field="email" />
+            <Input
+              type="password"
+              placeholder="Password"
+              name="password"
+              autoComplete="current-password"
+              required
+            />
+            <FieldErrors error={error} field="password" />
+            <Button className="place-self-end" type="submit" disabled={login.isPending}>
+              Login
+            </Button>
           </form>
         </CardContent>
       </Card>
     </div>
   );
 }
-

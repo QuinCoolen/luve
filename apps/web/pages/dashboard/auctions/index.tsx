@@ -21,17 +21,14 @@ import { GetServerSidePropsContext } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSessionUser, redirectToLogin } from "@/lib/session";
 
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
-  if (!context.req.headers.cookie) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
+  // Verified by the auth service, not just "some cookie exists".
+  if (!(await getSessionUser(context))) {
+    return redirectToLogin(context);
   }
 
   try {

@@ -1,71 +1,144 @@
-import Axios, { AxiosError, AxiosRequestConfig } from "axios";
+import Axios, { AxiosError, type AxiosRequestConfig } from "axios";
 
 /**
- * Shared axios instance used by every Orval-generated endpoint.
- * - `baseURL` from NEXT_PUBLIC_API_URL so the same client works in any env.
- * - `withCredentials` so the httpOnly auth cookies ride along on every request.
+ * Shared axios instance used by every Orval-generated client.
+ *
+ * - Browser: same origin (`NEXT_PUBLIC_API_URL` is normally empty); the
+ *   Traefik gateway serves both the app and /api/v1/*.
+ * - Server (getServerSideProps): `INTERNAL_API_URL`, the gateway as seen from
+ *   the Next.js process.
+ * - `withCredentials` so the httpOnly auth cookies ride along.
  */
+const isServer = typeof window === "undefined";
+
 export const AXIOS_INSTANCE = Axios.create({
-  // Empty = same origin: the browser reaches every service through the gateway.
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "",
+  baseURL: isServer
+    ? (process.env.INTERNAL_API_URL ?? "http://localhost:8000")
+    : (process.env.NEXT_PUBLIC_API_URL ?? ""),
   withCredentials: true,
 });
 
-/** RFC 7807 problem+json shape the API returns for every error. */
-export interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  instance: string;
-  errors?: Record<string, string[]>;
+/**
+ * NestJS's default error body: `{ statusCode, message, error }`. `message` is
+ * one string, or a list for validation errors, where each entry reads
+ * `field: what's wrong` (e.g. `email: Invalid email address`).
+ */
+interface NestErrorBody {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
 }
 
-/** Typed error thrown for any non-2xx response, parsed from problem+json. */
+const FIELD_MESSAGE = /^([\w.]+): (.+)$/;
+
+/** Thrown for every non-2xx response. */
 export class ApiError extends Error {
   readonly status: number;
-  readonly title: string;
-  readonly detail: string;
-  readonly type: string;
-  readonly errors?: Record<string, string[]>;
+  readonly messages: string[];
 
-  constructor(problem: ProblemDetails) {
-    super(problem.detail || problem.title);
+  constructor(status: number, messages: string[]) {
+    super(messages.join(" ") || `Request failed with status ${status}`);
     this.name = "ApiError";
-    this.status = problem.status;
-    this.title = problem.title;
-    this.detail = problem.detail;
-    this.type = problem.type;
-    this.errors = problem.errors;
+    this.status = status;
+    this.messages = messages;
+  }
+
+  /** Messages about one field (`email: …`), for showing next to that input. */
+  fieldErrors(field: string): string[] {
+    return this.messages.flatMap((message) => {
+      const match = FIELD_MESSAGE.exec(message);
+      return match?.[1] === field ? [match[2]!] : [];
+    });
+  }
+
+  /** Messages that aren't about one field, e.g. "The email or password is incorrect." */
+  generalErrors(): string[] {
+    return this.messages.filter((message) => !FIELD_MESSAGE.test(message));
   }
 }
 
-function isProblemDetails(value: unknown): value is ProblemDetails {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "status" in value &&
-    "title" in value
-  );
+function isNestErrorBody(value: unknown): value is NestErrorBody {
+  return typeof value === "object" && value !== null && "statusCode" in value && "message" in value;
 }
+
+function toApiError(error: AxiosError): unknown {
+  if (!error.response) {
+    return error;
+  }
+  const data = error.response.data;
+  const messages = isNestErrorBody(data)
+    ? [data.message].flat()
+    : [error.response.statusText || "Request failed"];
+  return new ApiError(error.response.status, messages);
+}
+
+// --- silent refresh ---------------------------------------------------------
+// Access tokens live 15 minutes. When a request fails with 401, ask the auth service
+// for a new one (the refresh cookie is scoped to /api/v1/auth) and retry the
+// request once. Concurrent 401s share one refresh call.
+
+const REFRESH_URL = "/api/v1/auth/refresh";
+const AUTH_URLS = ["/api/v1/auth/refresh", "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/logout"];
+let refreshing: Promise<void> | null = null;
+
+/** Exchanges the refresh cookie for a new access cookie. Rejects if the session is over. */
+export function refreshSession(): Promise<void> {
+  refreshing ??= AXIOS_INSTANCE.post(REFRESH_URL)
+    .then(() => undefined)
+    .catch((error: unknown) => {
+      // 409: another tab rotated the token a moment ago. The browser already
+      // has the new cookies, so the session is fine.
+      if (error instanceof ApiError && error.status === 409) {
+        return undefined;
+      }
+      throw error;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+type RetriableConfig = AxiosRequestConfig & { _retried?: boolean };
 
 AXIOS_INSTANCE.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<ProblemDetails>) => {
-    const data = error.response?.data;
-    if (isProblemDetails(data)) {
-      return Promise.reject(new ApiError(data));
+  async (error: AxiosError) => {
+    const config = error.config as RetriableConfig | undefined;
+    const url = config?.url ?? "";
+    const canRefresh =
+      !isServer &&
+      error.response?.status === 401 &&
+      config !== undefined &&
+      !config._retried &&
+      !AUTH_URLS.some((authUrl) => url.startsWith(authUrl));
+
+    if (canRefresh) {
+      config._retried = true;
+      try {
+        await refreshSession();
+        return AXIOS_INSTANCE(config);
+      } catch {
+        // Session is over: surface the original 401.
+      }
     }
-    return Promise.reject(error);
+    return Promise.reject(toApiError(error));
   },
 );
 
 /**
- * Orval mutator. Orval calls this for every request, passing the request config
- * (including the `signal` for cancellation) and returns the response body.
+ * Orval mutator: every generated function calls this with the request config
+ * (plus per-call `options`, e.g. forwarded cookies during SSR).
  */
-export const customInstance = <T>(config: AxiosRequestConfig): Promise<T> => {
-  return AXIOS_INSTANCE(config).then((response) => response.data as T);
+export const customInstance = <T>(
+  config: AxiosRequestConfig,
+  options?: AxiosRequestConfig,
+): Promise<T> => {
+  return AXIOS_INSTANCE({ ...config, ...options }).then((response) => response.data as T);
 };
+
+/** Tells Orval which error type the generated hooks expose (the parameter is Orval's convention). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type ErrorType<_Error> = ApiError;
 
 export default customInstance;

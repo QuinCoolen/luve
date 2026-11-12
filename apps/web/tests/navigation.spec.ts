@@ -39,7 +39,6 @@ test.describe('Navigation Tests', () => {
     await expect(form).toBeVisible();
 
     // Verify all required form fields are present
-    await expect(page.getByPlaceholder('Username')).toBeVisible();
     await expect(page.getByPlaceholder('Email')).toBeVisible();
     await expect(page.getByPlaceholder('Password', { exact: true })).toBeVisible();
     await expect(page.getByPlaceholder('Confirm Password', { exact: true })).toBeVisible();

@@ -1,5 +1,6 @@
 import 'reflect-metadata';
-import { bootstrapService } from '@luve/service-kit';
-import { service } from './service.js';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module.js';
 
-await bootstrapService(service);
+const app = await NestFactory.create(AppModule);
+await app.listen(4005);

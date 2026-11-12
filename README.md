@@ -8,16 +8,18 @@ An auction site built as a **learning / portfolio project** for backend architec
 flowchart LR
   browser([Browser]) --> gw[Traefik gateway :8000]
   gw -->|/| web[Next.js web]
-  gw -->|/api/v1/auth, /users| identity
+  gw -->|/api/v1/auth| auth
+  gw -->|/api/v1/users| users
   gw -->|/api/v1/auctions| auctions
   gw -->|/api/v1/auctions/:id/bids, /bids| bidding
   gw -->|/api/v1/payments| payments
   gw -->|/socket.io| realtime
 
-  identity & auctions & bidding & payments -- integration events --> mq[(RabbitMQ<br/>luve.events)]
-  mq --> auctions & bidding & payments & realtime
+  auth & auctions & bidding & payments -- integration events --> mq[(RabbitMQ<br/>luve.events)]
+  mq --> users & auctions & bidding & payments & realtime
 
-  identity --- pgI[(identity db)]
+  auth --- pgAu[(auth db)]
+  users --- pgU[(users db)]
   auctions --- pgA[(auctions db)]
   bidding --- pgB[(bidding db<br/>event store + read models)]
   payments --- pgP[(payments db)]
@@ -26,12 +28,14 @@ flowchart LR
 | Path | What |
 |---|---|
 | [`apps/web`](apps/web) | Next.js frontend; typed API clients generated with Orval from each service's OpenAPI |
-| [`services/identity`](services/identity) | accounts, sessions, JWT issuing (JWKS) |
+| [`services/auth`](services/auth) | logging in: accounts (email + password), sessions, access tokens (JWT + JWKS) |
+| [`services/users`](services/users) | profiles: username (later picture, location, …) |
 | [`services/auctions`](services/auctions) | auction listings and lifecycle |
 | [`services/bidding`](services/bidding) | bidding, **event-sourced** with [`@ocoda/event-sourcing`](https://github.com/ocoda/event-sourcing) |
 | [`services/payments`](services/payments) | Stripe checkout for won auctions |
 | [`services/realtime`](services/realtime) | Socket.IO push of bids and status changes |
-| [`packages/service-kit`](packages/service-kit) | shared Nest plumbing: bootstrap, env validation, problem+json errors, logging, health, OpenAPI |
+| [`packages/contracts`](packages/contracts) | the event schemas services agree on |
+| [`packages/messaging`](packages/messaging) | RabbitMQ + transactional outbox, for services that publish events |
 | [`infra/`](infra) | Postgres init, RabbitMQ definitions, Traefik routes |
 | [`docs/`](docs) | [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [decision records](docs/adr) |
 
@@ -54,17 +58,26 @@ pnpm dev           # all services + web on the host, in watch mode
 
 Open **http://localhost:8000**. Everything (web app, APIs, websockets) goes through the gateway on that one origin.
 
+First time? Create demo accounts and a stable token-signing key:
+
+```bash
+pnpm --filter @luve/auth db:deploy        # apply the migrations
+pnpm --filter @luve/users db:deploy
+pnpm --filter @luve/auth keys:generate    # optional: tokens survive restarts
+pnpm seed                                 # with `pnpm dev` running: alice@luve.dev / bob@luve.dev, password Password123
+```
+
 Or run everything in containers: `pnpm stack:up` (and `pnpm stack:down`).
 
 | URL | |
 |---|---|
 | http://localhost:8000 | the app (via Traefik) |
-| http://localhost:8000/docs/identity (auctions, bidding, …) | Swagger UI per service |
+| http://localhost:8000/docs/auth, /docs/users | Swagger UI of the services that have endpoints |
 | http://localhost:8088 | Traefik dashboard |
-| http://localhost:15673 | RabbitMQ management (luve / luve); queue `luve.audit` receives every event |
+| http://localhost:15673 | RabbitMQ management (luve / luve); queue `luve.audit` receives every event, `luve.dead-letters` the ones a consumer rejected |
 | `localhost:5433` | Postgres (luve / luve), one database per service |
 
-Direct service ports (bypassing the gateway): identity 4001, auctions 4002, bidding 4003, payments 4004, realtime 4005, web 3000.
+Direct service ports (bypassing the gateway): auth 4001, auctions 4002, bidding 4003, payments 4004, realtime 4005, users 4006, web 3000.
 
 ## Everyday commands
 
@@ -72,8 +85,11 @@ Direct service ports (bypassing the gateway): identity 4001, auctions 4002, bidd
 pnpm build | test | lint | typecheck    # turbo runs them across the workspace
 pnpm openapi                            # export every service's openapi.json
 pnpm api:generate                       # regenerate the web's typed clients (Orval)
-pnpm --filter @luve/identity test       # one package
+pnpm turbo run test --filter=@luve/auth   # one package (e2e tests start Postgres/RabbitMQ via Testcontainers)
+pnpm --filter @luve/web exec playwright test --project=chromium   # browser tests, with the stack running
 ```
+
+> **Windows:** Docker Desktop doesn't forward file-change events into bind mounts, so after editing `infra/traefik/**` run `docker compose restart traefik`.
 
 ## CI/CD
 

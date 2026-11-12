@@ -1,9 +1,5 @@
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  token: string;
-}
+/** The signed-in user's profile, as returned by the users service (GET /api/v1/users/me). */
+export type { Me as User } from "@/api/generated/users/model";
 
 export class ValidationError extends Error {
   constructor(message: string, errors: { [key: string]: string[] }) {

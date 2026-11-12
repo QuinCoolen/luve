@@ -4,13 +4,13 @@ Each phase ships working code end to end (service + events + frontend) and gets 
 
 | # | Phase | Status |
 |---|---|---|
-| 0 | **Foundation**: monorepo (pnpm + Turborepo), NestJS 12 / ESM, `@luve/service-kit`, service shells, Docker infra, Traefik gateway, per-service CI | done |
-| 1 | **Identity**: register, login, refresh rotation, logout, `/me`, profiles, JWKS, JWT guard; `@luve/contracts`, outbox publishing; web login switched over | in progress |
-| 2 | **Auctions**: consumer side of messaging (inbox, retries, DLQ), create/list (cursor)/detail/mine, local copy of seller names; web auction pages switched over | planned |
+| 0 | **Foundation**: monorepo (pnpm + Turborepo), NestJS 12 / ESM, service shells, Docker infra, Traefik gateway, per-service CI | done |
+| 1 | **Auth + users**: register, login, refresh rotation with reuse detection, logout, account deletion, JWKS, JWT guard; users service with profiles (username via two-step sign-up), created and deleted by auth's events (first consumer, dead-letter queue); `@luve/contracts`, outbox publishing (`@nestjs/outbox` → RabbitMQ); gateway rate limit; web login/register switched over with silent refresh | done |
+| 2 | **Auctions** *(next)*: create/list (cursor)/detail/mine, local copy of seller names (users starts publishing profile events), verify access tokens with auth's JWKS (third copy of the guard: copy it or extract a package, decided then); web auction pages switched over | planned |
 | 3 | **Bidding**: event-sourced aggregate, commands/queries, projector + relay, closing scheduler + sweeper, cancellation saga; web bid form via REST | planned |
 | 4 | **Realtime**: Socket.IO gateway fed by events; web moves from SignalR to socket.io-client | planned |
 | 5 | **Payments**: Stripe checkout (winner only) + signed webhooks | planned |
-| 6 | **Notifications, observability, hardening**: emails (Mailpit), OpenTelemetry traces across services (Grafana LGTM), Playwright E2E in CI | planned |
+| 6 | **Notifications, observability, hardening**: emails (Mailpit), OpenTelemetry traces across services (Grafana LGTM), Playwright E2E in CI; optionally health checks, structured logging and a shared error format | planned |
 | 7 | **Extras**: anti-sniping, projection rebuild, "auction state at time T" replay, k6 load test on a hot auction, Kubernetes (k3d + Helm) | planned |
 
 ## Every phase includes

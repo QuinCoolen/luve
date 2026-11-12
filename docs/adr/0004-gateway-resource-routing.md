@@ -9,7 +9,7 @@ With five services, the browser would otherwise talk to five origins: CORS every
 ## Decision
 
 - Traefik is the single entry point on one origin (`localhost:8000`) for the web app, every API and websockets.
-- Routes are **resource-based** (`/api/v1/auctions`, `/api/v1/auctions/{id}/bids`, …), not service-based (`/identity/...`). Each service serves its full path, so nothing is rewritten; the bids rule outranks the auctions rule.
+- Routes are **resource-based** (`/api/v1/auctions`, `/api/v1/auctions/{id}/bids`, …), not service-based (`/bidding-service/...`). Each service serves its full path, so nothing is rewritten; the bids rule outranks the auctions rule.
 - Two dynamic route files: `infra/traefik/host` (services on the host via `pnpm dev`) and `infra/traefik/docker` (containers), selected with `TRAEFIK_DYNAMIC`.
 
 ## Consequences

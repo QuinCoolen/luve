@@ -6,19 +6,20 @@ Luve is split into small NestJS services that each own their data and talk to ea
 
 | Service | Owns | Storage | Publishes | Consumes |
 |---|---|---|---|---|
-| **identity** | credentials, sessions, profiles, JWT signing keys (JWKS) | Postgres (Prisma) + outbox | `user-registered`, `user-updated`, `user-deleted` | none |
-| **auctions** | listings, images, lifecycle status, a local copy of seller names | Postgres (Prisma) + outbox/inbox | `auction-published`, `auction-cancellation-requested`, `auction-status-changed` | identity `user-*`; bidding `bid-placed`, `bidding-extended`, `bidding-closed`, `bidding-cancelled`, `cancellation-rejected`; payments `*` |
+| **auth** | logging in: accounts (email, password hash), sessions, JWT signing keys (JWKS) | Postgres (Prisma) + outbox | `user-registered`, `user-deleted` | none |
+| **users** | profiles: username (later picture, location, …) | Postgres (Prisma) | none yet | auth `user-registered`, `user-deleted` |
+| **auctions** | listings, images, lifecycle status, a local copy of seller names | Postgres (Prisma) + outbox/inbox | `auction-published`, `auction-cancellation-requested`, `auction-status-changed` | auth `user-*`; bidding `bid-placed`, `bidding-extended`, `bidding-closed`, `bidding-cancelled`, `cancellation-rejected`; payments `*` |
 | **bidding** | bidding per auction (**ES + CQRS**) | event store (Postgres schema `eventstore`) + read models (Prisma, schema `public`) | `bidding-opened`, `bid-placed`, `bidding-extended`, `bidding-closed`, `bidding-cancelled`, `cancellation-rejected` | auctions `auction-published`, `auction-cancellation-requested` |
 | **payments** | Stripe checkout + webhook, who has to pay how much | Postgres (Prisma) + outbox/inbox | `checkout-started`, `payment-succeeded`, `payment-expired` | bidding `bidding-closed`; auctions `auction-published` |
 | **realtime** | Socket.IO rooms `auction:{id}` and `user:{id}`; push only, bids go through REST | Redis adapter | none | bidding `*`, auctions `auction-status-changed` |
-| **notifications** *(planned)* | outbid / won / sold / paid emails | Postgres (email directory) | none | identity `user-*`, bidding, payments |
+| **notifications** *(planned)* | outbid / won / sold / paid emails | Postgres (email directory) | none | auth `user-*`, bidding, payments |
 
 Rules every service follows:
 
 - **One database per service.** No service reads another service's tables. If a service needs someone else's data (e.g. a seller's username), it keeps a local copy fed by events.
 - **No synchronous calls between services on the hot path.** Placing a bid never waits on another service.
 - **Money is integer euro cents.** IDs are UUIDv7.
-- **Errors are `application/problem+json`** (RFC 9457) everywhere, built by `@luve/service-kit`.
+- **Errors use NestJS's default shape** `{ statusCode, message, error }`. Validation errors list one `field: message` per problem, so forms can show them next to the right input.
 
 ## Gateway
 
@@ -26,7 +27,8 @@ Traefik is the only thing the browser talks to (`http://localhost:8000`). It ser
 
 | Path | Service |
 |---|---|
-| `/api/v1/auth/*`, `/api/v1/users/*` | identity |
+| `/api/v1/auth/*` | auth |
+| `/api/v1/users/*` | users |
 | `/api/v1/auctions/*` | auctions |
 | `/api/v1/auctions/{id}/bids`, `/api/v1/bids/*` | bidding (higher priority than auctions) |
 | `/api/v1/payments/*` | payments |
@@ -38,15 +40,17 @@ Because web and API share an origin there is no CORS, and the auth cookies are p
 
 ## Authentication
 
-identity signs short-lived access tokens (Ed25519 JWT, 15 min) and publishes its public keys at `/.well-known/jwks.json`. Every other service verifies tokens **locally** against those keys; nobody calls identity per request. The browser holds the tokens in httpOnly cookies (`jwt`, and `refresh` scoped to `/api/v1/auth`). Refresh tokens rotate on every use, and reusing an old one revokes the whole session family.
+The auth service signs short-lived access tokens (Ed25519 JWT, 15 min) and publishes its public keys at `/.well-known/jwks.json`. A token only carries the user id (`sub`); profile data such as the username comes from the users service. Services verify tokens **locally**: auth with its own key, users with the public keys it downloads once from auth. Nobody calls auth per request.
+
+Signing up takes two steps: `POST /auth/register` (email + password, which also signs you in), then `PATCH /users/me` to choose a username. See [ADR 0007](adr/0007-split-auth-and-users.md). The browser holds the tokens in httpOnly cookies (`jwt`, and `refresh` scoped to `/api/v1/auth`). Refresh tokens rotate on every use, and reusing an old one revokes the whole session family.
 
 ## Messaging
 
 - RabbitMQ topic exchange **`luve.events`**, routing key `<service>.<event>.v<n>` (e.g. `bidding.bid-placed.v1`), plus dead-letter exchange `luve.events.dlx`.
 - Every message is an envelope `{ eventId, type, occurredAt, correlationId, causationId, producer, data }`. The schemas are Zod, in `@luve/contracts`, validated on publish and on consume. `eventId` is the AMQP `messageId`.
-- **Outbox:** a service writes its state change and the outgoing event in the **same database transaction**; a relay publishes the outbox afterwards. A crash can't lose an event or publish one for a change that rolled back.
-- **Inbox:** consumers record processed `eventId`s, so redelivered messages are ignored (delivery is at-least-once).
-- Queues are declared in [`infra/rabbitmq/definitions.json`](../infra/rabbitmq/definitions.json) so they exist before the first publish. A topic exchange silently drops messages nobody is bound to. The dev queue **`luve.audit`** is bound to `#` and works as a live event log in the management UI.
+- **Outbox:** a service writes its state change and the outgoing event in the **same database transaction**; a relay publishes the outbox afterwards. A crash can't lose an event or publish one for a change that rolled back. Implemented with [`@nestjs/outbox`](https://docs.nestjs.com/reliability/outbox) (tables in the service's own database, schema `nest_outbox`) and a small RabbitMQ transport in `@luve/messaging` that only reports success once the broker confirmed the publish. See [ADR 0006](adr/0006-nestjs-outbox.md).
+- **Consumers:** each consuming service has its own durable queue (e.g. `luve.users`), declared by the service when it starts. RabbitMQ delivers at least once, so every handler is safe to run twice (create-if-missing, update, delete). A message a handler rejects goes to **`luve.dead-letters`** instead of being retried forever.
+- [`infra/rabbitmq/definitions.json`](../infra/rabbitmq/definitions.json) declares the exchanges, the dead-letter queue and the dev queue **`luve.audit`**, which is bound to `#` and works as a live event log in the management UI.
 - Events from the bidding stream carry the **stream version**, so consumers can ignore stale or duplicate updates even if messages arrive out of order.
 
 ## Bidding: event sourcing + CQRS
@@ -119,9 +123,9 @@ Only the winner can pay. Payments checks this against its own copy of `bidding-c
 
 ## Shared code
 
-- **`@luve/service-kit`**: every service boots with `bootstrapService(service)`, which provides helmet, cookies, `/api/v1` routing, Zod validation through Nest's Standard Schema pipe, problem+json errors, pino logging with request ids, `/health/live` + `/health/ready`, and Swagger at `/docs/<name>`. `exportOpenApi` writes `openapi.json` without connecting to anything.
-- **`@luve/contracts`** *(Phase 1)*: integration-event and websocket payload schemas.
-- **`@luve/messaging`** *(Phase 1–2)*: RabbitMQ publishing, outbox relay, inbox.
+- **No shared service setup.** Each service has its own `main.ts`, plus a `setup.ts` (routing under `/api/v1`, Zod validation, Swagger at `/docs/<name>`) once it has endpoints. A few lines repeat between services on purpose; see [ADR 0008](adr/0008-no-shared-service-kit.md). Production plumbing (health checks, structured logging, a shared error format) is left out and can be added later.
+- **`@luve/contracts`**: integration-event schemas (`defineEvent('auth.user-registered.v1', zodSchema)`) with JSON fixtures that producers and consumers both test against.
+- **`@luve/messaging`**: `MessagingModule.forRoot({ service, prisma })` wires RabbitMQ and the outbox; `IntegrationEvents.stage(tx, Contract, data)` validates an event against its contract and adds it to the outbox inside the caller's transaction. Consumers and the inbox follow in Phase 2.
 
 ## Frontend contract
 

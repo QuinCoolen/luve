@@ -1,6 +1,6 @@
 # 0005: Auth and users in one identity service
 
-**Status:** accepted (2026-11)
+**Status:** superseded by [0007](0007-split-auth-and-users.md) (2026-11)
 
 ## Context
 

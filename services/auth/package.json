@@ -1,0 +1,62 @@
+{
+  "name": "@luve/auth",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Accounts, sessions and access tokens (JWT + JWKS).",
+  "type": "module",
+  "files": [
+    "dist",
+    "prisma",
+    "prisma.config.ts"
+  ],
+  "scripts": {
+    "prisma:generate": "prisma generate",
+    "build": "nest build",
+    "dev": "nest start --watch --preserveWatchOutput",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "oxlint src",
+    "test": "vitest run",
+    "openapi:export": "node --env-file=.env.example dist/openapi.js",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "keys:generate": "node scripts/generate-keys.ts"
+  },
+  "dependencies": {
+    "@luve/contracts": "workspace:*",
+    "@luve/messaging": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "@nestjs/core": "catalog:",
+    "@nestjs/platform-express": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "@node-rs/argon2": "^2.2.2",
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "cookie-parser": "catalog:",
+    "dotenv": "catalog:",
+    "jose": "catalog:",
+    "pg": "catalog:",
+    "prisma": "catalog:",
+    "reflect-metadata": "catalog:",
+    "rxjs": "catalog:",
+    "uuid": "^14.0.3",
+    "zod": "catalog:",
+    "zod-openapi": "catalog:"
+  },
+  "devDependencies": {
+    "@luve/tsconfig": "workspace:*",
+    "@nestjs/cli": "catalog:",
+    "@nestjs/testing": "catalog:",
+    "@testcontainers/postgresql": "^12.2.1",
+    "@types/cookie-parser": "catalog:",
+    "@types/express": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "@types/supertest": "catalog:",
+    "supertest": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
