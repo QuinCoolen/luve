@@ -3,20 +3,23 @@
   "ui": "stream",
   "envMode": "loose",
   "tasks": {
+    "prisma:generate": {
+      "outputs": ["src/generated/**"]
+    },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", "src/generated/**", ".next/**", "!.next/cache/**"]
+      "dependsOn": ["^build", "prisma:generate"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "prisma:generate"]
     },
     "lint": {},
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "prisma:generate"],
       "outputs": []
     },
     "dev": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "prisma:generate"],
       "cache": false,
       "persistent": true
     },

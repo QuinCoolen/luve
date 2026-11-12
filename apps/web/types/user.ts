@@ -1,5 +1,5 @@
-/** The signed-in user, as returned by identity (GET /api/v1/auth/me). */
-export type { Me as User } from "@/api/generated/identity/model";
+/** The signed-in user, as returned by the auth service (GET /api/v1/auth/me). */
+export type { Me as User } from "@/api/generated/auth/model";
 
 export class ValidationError extends Error {
   constructor(message: string, errors: { [key: string]: string[] }) {

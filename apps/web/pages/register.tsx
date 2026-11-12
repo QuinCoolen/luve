@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { useContext, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "@/context/auth";
-import { useRegister } from "@/api/generated/identity/endpoints";
+import { useRegister } from "@/api/generated/auth/endpoints";
 import { ApiError } from "@/api/mutator/axios";
 import { FieldErrors } from "@/components/field-errors";
 
@@ -31,7 +31,7 @@ export default function Register() {
     }
 
     try {
-      // Registering also signs you in (identity sets the session cookies).
+      // Registering also signs you in (the auth service sets the session cookies).
       const user = await register.mutateAsync({
         data: {
           username: String(formData.get("username") ?? ""),

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 #
 # One Dockerfile for every NestJS service:
-#   docker build -f services/Dockerfile --build-arg SERVICE=identity .
+#   docker build -f services/Dockerfile --build-arg SERVICE=auth .
 #
 # 1. prune:   `turbo prune` cuts the monorepo down to the service and the
 #             workspace packages it depends on (plus a pruned lockfile).

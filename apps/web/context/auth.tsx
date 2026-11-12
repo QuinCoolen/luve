@@ -1,7 +1,7 @@
 import { createContext, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getMeQueryKey, logout as logoutRequest, useMe } from "@/api/generated/identity/endpoints";
-import type { Me } from "@/api/generated/identity/model";
+import { getMeQueryKey, logout as logoutRequest, useMe } from "@/api/generated/auth/endpoints";
+import type { Me } from "@/api/generated/auth/model";
 
 interface AuthContextType {
   /** The signed-in user, or null. */

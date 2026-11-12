@@ -55,7 +55,7 @@ type CreateAuctionFormData = z.infer<typeof createAuctionSchema>;
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
-  // Verified by identity, not just "some cookie exists".
+  // Verified by the auth service, not just "some cookie exists".
   if (!(await getSessionUser(context))) {
     return redirectToLogin(context);
   }

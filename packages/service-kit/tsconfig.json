@@ -1,7 +1,0 @@
-{
-  "extends": "@luve/tsconfig/nest.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": ["src/**/*.ts", "vitest.config.ts"]
-}

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Real end-to-end flow through the gateway: Next.js page → Traefik → identity
+ * Real end-to-end flow through the gateway: Next.js page → Traefik → auth
  * → Postgres, with the session in httpOnly cookies. Needs the stack running
  * (`pnpm infra:up && pnpm dev`).
  */

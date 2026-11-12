@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { identityEvents, UserRegisteredV1 } from './index.js';
+import { authEvents, UserRegisteredV1 } from './index.js';
 
-const contracts = [...identityEvents];
+const contracts = [...authEvents];
 const fixturesDir = new URL('../fixtures/', import.meta.url);
 
 /**
@@ -29,14 +29,14 @@ describe('event contracts', () => {
 
   it('rejects an envelope of the wrong type', () => {
     const message = JSON.parse(
-      readFileSync(new URL('identity.user-deleted.v1.json', fixturesDir), 'utf8'),
+      readFileSync(new URL('auth.user-deleted.v1.json', fixturesDir), 'utf8'),
     );
     expect(UserRegisteredV1.envelope.safeParse(message).success).toBe(false);
   });
 
   it('rejects data that breaks the contract', () => {
     const message = JSON.parse(
-      readFileSync(new URL('identity.user-registered.v1.json', fixturesDir), 'utf8'),
+      readFileSync(new URL('auth.user-registered.v1.json', fixturesDir), 'utf8'),
     );
     message.data.email = 'not-an-email';
     expect(UserRegisteredV1.envelope.safeParse(message).success).toBe(false);

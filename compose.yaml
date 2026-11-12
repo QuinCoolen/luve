@@ -91,17 +91,25 @@ services:
       retries: 5
 
   # --- apps (profile: apps) ---------------------------------------------------
-  identity:
+  auth:
     <<: *app
-    build: { <<: *app-build, args: { SERVICE: identity } }
+    build: { <<: *app-build, args: { SERVICE: auth } }
     # Apply pending migrations, then start.
     command: ['sh', '-c', 'node_modules/.bin/prisma migrate deploy && node dist/main.js']
     environment:
-      DATABASE_URL: postgresql://luve:luve@postgres:5432/identity
+      DATABASE_URL: postgresql://luve:luve@postgres:5432/auth
       RABBITMQ_URL: amqp://luve:luve@rabbitmq:5672
-      # No JWT_PRIVATE_KEY: identity generates an ephemeral signing key at boot
+      # No JWT_PRIVATE_KEY: auth generates an ephemeral signing key at boot
       # (clients transparently refresh after a restart). Set one to keep tokens
       # valid across restarts.
+
+  users:
+    <<: *app
+    build: { <<: *app-build, args: { SERVICE: users } }
+    command: ['sh', '-c', 'node_modules/.bin/prisma migrate deploy && node dist/main.js']
+    environment:
+      DATABASE_URL: postgresql://luve:luve@postgres:5432/users
+      RABBITMQ_URL: amqp://luve:luve@rabbitmq:5672
 
   auctions:
     <<: *app

@@ -25,6 +25,7 @@ const service = (name: string) => ({
 });
 
 export default defineConfig({
-  identity: service("identity"),
+  auth: service("auth"),
+  users: service("users"),
 });
 

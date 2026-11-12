@@ -12,29 +12,20 @@
     "dev": "nest start --watch --preserveWatchOutput",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "oxlint src",
-    "test": "vitest run",
-    "openapi:export": "node dist/openapi.js"
+    "lint": "oxlint src"
   },
   "dependencies": {
-    "@luve/service-kit": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
-    "@nestjs/swagger": "catalog:",
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:"
   },
   "devDependencies": {
     "@luve/tsconfig": "workspace:*",
     "@nestjs/cli": "catalog:",
-    "@nestjs/testing": "catalog:",
     "@types/express": "catalog:",
     "@types/node": "catalog:",
-    "@types/supertest": "catalog:",
-    "supertest": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }

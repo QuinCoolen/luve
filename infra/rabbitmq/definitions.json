@@ -7,9 +7,19 @@
       "tags": ["administrator"]
     }
   ],
-  "vhosts": [{ "name": "/" }],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
   "permissions": [
-    { "user": "luve", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
+    {
+      "user": "luve",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
   ],
   "exchanges": [
     {
@@ -42,6 +52,15 @@
         "x-max-length": 10000,
         "x-overflow": "drop-head"
       }
+    },
+    {
+      "name": "luve.dead-letters",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
     }
   ],
   "bindings": [
@@ -49,6 +68,14 @@
       "source": "luve.events",
       "vhost": "/",
       "destination": "luve.audit",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "luve.events.dlx",
+      "vhost": "/",
+      "destination": "luve.dead-letters",
       "destination_type": "queue",
       "routing_key": "#",
       "arguments": {}

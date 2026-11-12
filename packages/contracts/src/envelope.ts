@@ -8,7 +8,7 @@ import { z } from 'zod';
 export const EnvelopeMetaSchema = z.object({
   /** Unique per event (UUIDv7). Consumers dedupe on it: delivery is at-least-once. */
   eventId: z.uuid(),
-  /** `<service>.<event>.v<n>`, also the routing key, e.g. `identity.user-registered.v1`. */
+  /** `<service>.<event>.v<n>`, also the routing key, e.g. `auth.user-registered.v1`. */
   type: z.string().regex(/^[a-z]+\.[a-z0-9-]+\.v\d+$/),
   /** When the change happened (ISO 8601). */
   occurredAt: z.iso.datetime({ offset: true }),

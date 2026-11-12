@@ -10,7 +10,7 @@ build/
 .next/
 
 # generated Prisma 7 client (regenerated from schema on build)
-src/generated/
+**/src/generated/
 
 # typescript
 *.tsbuildinfo

@@ -13,7 +13,7 @@ import { IntegrationEvents, PRODUCER } from './integration-events.js';
 import { RabbitMqOutboxTransport } from './rabbitmq-outbox.transport.js';
 
 export interface MessagingModuleOptions {
-  /** Producer name stamped on every envelope, e.g. `identity`. */
+  /** Producer name stamped on every envelope, e.g. `auth`. */
   service: string;
   /**
    * Where the service's Prisma client comes from. The outbox store runs its

@@ -73,7 +73,7 @@ function toApiError(error: AxiosError): unknown {
 }
 
 // --- silent refresh ---------------------------------------------------------
-// Access tokens live 15 minutes. When a request fails with 401, ask identity
+// Access tokens live 15 minutes. When a request fails with 401, ask the auth service
 // for a new one (the refresh cookie is scoped to /api/v1/auth) and retry the
 // request once. Concurrent 401s share one refresh call.
 

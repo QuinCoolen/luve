@@ -10,8 +10,8 @@ Microservices are often paired with one repository per service "so each can have
 
 ## Decision
 
-- Split the backend into services by business capability: identity, auctions, bidding, payments, realtime (and later notifications). Each owns its database and publishes events.
-- Keep everything in **one repository**: pnpm workspaces + Turborepo, with shared code in `packages/` (`service-kit`, `contracts`, `messaging`).
+- Split the backend into services by business capability: auth, users, auctions, bidding, payments, realtime (and later notifications). Each owns its database and publishes events.
+- Keep everything in **one repository**: pnpm workspaces + Turborepo, with shared code in `packages/` (`contracts`, `messaging`).
 - Give **each service its own pipeline** anyway: a path-filtered workflow per service calling one reusable workflow, producing its own image.
 
 ## Consequences

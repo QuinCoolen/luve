@@ -38,7 +38,7 @@ import { getSessionUser, redirectToLogin } from "@/lib/session";
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
-  // Verified by identity, not just "some cookie exists".
+  // Verified by the auth service, not just "some cookie exists".
   if (!(await getSessionUser(context))) {
     return redirectToLogin(context);
   }

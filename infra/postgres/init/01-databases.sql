@@ -1,6 +1,7 @@
 -- Runs once, when the Postgres data volume is empty (docker-entrypoint-initdb.d).
 -- One database per service: services never read each other's tables.
-CREATE DATABASE identity;
+CREATE DATABASE auth;
+CREATE DATABASE users;
 CREATE DATABASE auctions;
 CREATE DATABASE bidding;
 CREATE DATABASE payments;

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/context/auth";
-import { me, useLogin } from "@/api/generated/identity/endpoints";
+import { me, useLogin } from "@/api/generated/auth/endpoints";
 import { ApiError, refreshSession } from "@/api/mutator/axios";
 import { FieldErrors } from "@/components/field-errors";
 

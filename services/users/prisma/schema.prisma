@@ -1,0 +1,25 @@
+// Users service schema: the public side of every user. Rows are created,
+// renamed and deleted by the auth.user-* events (src/profiles/auth-events.consumer.ts);
+// nothing writes them over HTTP.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+  runtime             = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Profile {
+  /// The same id the user has in the auth service.
+  userId    String   @id @map("user_id") @db.Uuid
+  username  String
+  /// When the user registered.
+  createdAt DateTime @map("created_at") @db.Timestamptz(3)
+
+  @@map("profiles")
+}
