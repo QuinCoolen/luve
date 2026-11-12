@@ -27,24 +27,10 @@
             }
           },
           "400": {
-            "description": "Validation failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Validation failed"
           },
           "409": {
-            "description": "Email or username already taken",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Email or username already taken"
           }
         },
         "tags": [
@@ -78,14 +64,7 @@
             }
           },
           "401": {
-            "description": "Invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Invalid credentials"
           }
         },
         "tags": [
@@ -102,14 +81,10 @@
             "description": "New access and refresh cookies set"
           },
           "401": {
-            "description": "Missing, invalid, stale or reused refresh token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Missing, invalid, expired or reused refresh token"
+          },
+          "409": {
+            "description": "Another request rotated this token a moment ago"
           }
         },
         "tags": [
@@ -147,14 +122,7 @@
             }
           },
           "401": {
-            "description": "Not authenticated (missing, invalid or expired access token)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Missing, invalid or expired access token"
           }
         },
         "security": [
@@ -193,34 +161,13 @@
             }
           },
           "400": {
-            "description": "Validation failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Validation failed"
           },
           "401": {
-            "description": "Not authenticated (missing, invalid or expired access token)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Missing, invalid or expired access token"
           },
           "409": {
-            "description": "Email or username already taken",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Email or username already taken"
           }
         },
         "security": [
@@ -240,14 +187,7 @@
             "description": "Account deleted and signed out"
           },
           "401": {
-            "description": "Not authenticated (missing, invalid or expired access token)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "Missing, invalid or expired access token"
           }
         },
         "security": [
@@ -287,14 +227,7 @@
             }
           },
           "404": {
-            "description": "No such user",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "No such user"
           }
         },
         "tags": [
@@ -388,51 +321,6 @@
           "email",
           "username",
           "createdAt"
-        ],
-        "additionalProperties": false
-      },
-      "ProblemDetails": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "URI reference identifying the problem type, e.g. /errors/validation"
-          },
-          "title": {
-            "type": "string",
-            "description": "Short, human-readable summary of the problem type"
-          },
-          "status": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991,
-            "description": "HTTP status code"
-          },
-          "detail": {
-            "type": "string",
-            "description": "Explanation specific to this occurrence"
-          },
-          "instance": {
-            "type": "string",
-            "description": "The request path that produced the problem"
-          },
-          "errors": {
-            "description": "Field-keyed validation messages (dot-separated paths)",
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "required": [
-          "type",
-          "title",
-          "status",
-          "detail",
-          "instance"
         ],
         "additionalProperties": false
       },

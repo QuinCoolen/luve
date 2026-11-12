@@ -1,5 +1,5 @@
-import type { NestApplicationOptions, Type } from '@nestjs/common';
-import type { ExcludedRoute } from './http/routing.js';
+import type { Type } from '@nestjs/common';
+import type { ExcludedRoute } from './routing.js';
 
 /**
  * Everything the bootstrap and the OpenAPI exporter need to know about a
@@ -8,16 +8,16 @@ import type { ExcludedRoute } from './http/routing.js';
  * served routes and the documented routes can't drift apart.
  */
 export interface ServiceDefinition {
-  /** Short id, e.g. `identity`. Used in logs and the docs path `/docs/<name>`. */
+  /** Short id, e.g. `identity`. Swagger UI is served at `/docs/<name>`. */
   name: string;
   /** OpenAPI title, e.g. `Luve Identity API`. */
   title: string;
   description?: string;
+  /** Port to listen on; the `PORT` environment variable overrides it. */
+  port: number;
   module: Type<unknown>;
-  /** Extra routes to keep outside `/api/v1` (health is always excluded). */
+  /** Routes to keep outside `/api/v1`, e.g. identity's `/.well-known/jwks.json`. */
   excludeFromPrefix?: ExcludedRoute[];
-  /** Passed to `NestFactory.create`, e.g. `{ rawBody: true }` for webhooks. */
-  nestOptions?: NestApplicationOptions;
 }
 
 export function defineService(definition: ServiceDefinition): ServiceDefinition {

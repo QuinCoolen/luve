@@ -5,5 +5,6 @@ export const service = defineService({
   name: 'bidding',
   title: 'Luve Bidding API',
   description: 'Event-sourced bidding (ES + CQRS with @ocoda/event-sourcing).',
+  port: 4003,
   module: AppModule,
 });

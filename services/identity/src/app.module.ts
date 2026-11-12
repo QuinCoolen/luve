@@ -1,20 +1,19 @@
-import { MessagingModule, RabbitMqReadinessCheck } from '@luve/messaging';
-import { ConfigKitModule, HealthKitModule, JwtAuthModule, LoggingModule } from '@luve/service-kit';
+import { MessagingModule } from '@luve/messaging';
+import { JwtAuthModule } from '@luve/service-kit';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
 import { type Env, envSchema } from './env.js';
 import { KeysModule } from './keys/keys.module.js';
 import { SigningKeys } from './keys/signing-keys.js';
 import { PrismaModule } from './prisma/prisma.module.js';
-import { PrismaReadinessCheck } from './prisma/prisma.readiness.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
   imports: [
-    ConfigKitModule.forRoot(envSchema),
-    LoggingModule.forRoot('identity'),
+    // Reads .env and refuses to start when a variable is missing or invalid.
+    ConfigModule.forRoot({ isGlobal: true, validate: (config) => envSchema.parse(config) }),
     PrismaModule,
     MessagingModule.forRoot({
       service: 'identity',
@@ -31,7 +30,6 @@ import { UsersModule } from './users/users.module.js';
         jwks: { keys: [keys.publicJwk] },
       }),
     }),
-    HealthKitModule.forRoot({ checks: [PrismaReadinessCheck, RabbitMqReadinessCheck] }),
     KeysModule,
     AuthModule,
     UsersModule,

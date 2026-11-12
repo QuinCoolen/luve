@@ -10,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { OutboxModule, OutboxStorage } from '@nestjs/outbox';
 import { fromPrisma, PostgresOutboxStore } from '@nestjs/outbox/postgres';
 import { IntegrationEvents, PRODUCER } from './integration-events.js';
-import { RabbitMqReadinessCheck } from './rabbitmq.readiness.js';
 import { RabbitMqOutboxTransport } from './rabbitmq-outbox.transport.js';
 
 export interface MessagingModuleOptions {
@@ -83,9 +82,8 @@ export class MessagingModule {
             new PostgresOutboxStore({ executor: fromPrisma(prisma), migrate: true }, storage),
         },
         IntegrationEvents,
-        RabbitMqReadinessCheck,
       ],
-      exports: [IntegrationEvents, RabbitMqReadinessCheck, rabbitmq],
+      exports: [IntegrationEvents, rabbitmq],
     };
   }
 }

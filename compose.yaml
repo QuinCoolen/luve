@@ -19,12 +19,6 @@ x-app: &app
     rabbitmq: { condition: service_healthy }
     redis: { condition: service_healthy }
 
-x-app-healthcheck: &app-healthcheck
-  interval: 10s
-  timeout: 5s
-  retries: 5
-  start_period: 20s
-
 services:
   # --- infrastructure ---------------------------------------------------------
   postgres:
@@ -103,56 +97,27 @@ services:
     # Apply pending migrations, then start.
     command: ['sh', '-c', 'node_modules/.bin/prisma migrate deploy && node dist/main.js']
     environment:
-      NODE_ENV: production
-      PORT: 4001
       DATABASE_URL: postgresql://luve:luve@postgres:5432/identity
       RABBITMQ_URL: amqp://luve:luve@rabbitmq:5672
       # No JWT_PRIVATE_KEY: identity generates an ephemeral signing key at boot
       # (clients transparently refresh after a restart). Set one to keep tokens
       # valid across restarts.
-    healthcheck:
-      <<: *app-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:4001/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
   auctions:
     <<: *app
     build: { <<: *app-build, args: { SERVICE: auctions } }
-    environment:
-      NODE_ENV: production
-      PORT: 4002
-    healthcheck:
-      <<: *app-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:4002/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
   bidding:
     <<: *app
     build: { <<: *app-build, args: { SERVICE: bidding } }
-    environment:
-      NODE_ENV: production
-      PORT: 4003
-    healthcheck:
-      <<: *app-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:4003/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
   payments:
     <<: *app
     build: { <<: *app-build, args: { SERVICE: payments } }
-    environment:
-      NODE_ENV: production
-      PORT: 4004
-    healthcheck:
-      <<: *app-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:4004/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
   realtime:
     <<: *app
     build: { <<: *app-build, args: { SERVICE: realtime } }
-    environment:
-      NODE_ENV: production
-      PORT: 4005
-    healthcheck:
-      <<: *app-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:4005/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
   web:
     profiles: [apps]
@@ -165,9 +130,6 @@ services:
       INTERNAL_API_URL: http://traefik:8000
     depends_on:
       traefik: { condition: service_healthy }
-    healthcheck:
-      <<: *app-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
 volumes:
   pgdata:

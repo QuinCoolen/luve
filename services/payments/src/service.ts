@@ -5,5 +5,6 @@ export const service = defineService({
   name: 'payments',
   title: 'Luve Payments API',
   description: 'Stripe checkout for won auctions.',
+  port: 4004,
   module: AppModule,
 });

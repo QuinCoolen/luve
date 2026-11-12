@@ -9,10 +9,9 @@ The first skeleton used NestJS 11 (CommonJS, Jest) with `nestjs-zod`. `@ocoda/ev
 ## Decision
 
 - All services and packages: NestJS 12, `"type": "module"` with `nodenext` resolution, TypeScript 6, Vitest, oxlint. Vite 8 emits the decorator metadata Nest DI needs, so tests need no SWC plugin.
-- Validation: `@Body({ schema })` + Nest's `StandardSchemaValidationPipe`, mapped to problem+json field errors by `@luve/service-kit`.
+- Validation: `@Body({ schema })` + Nest's `StandardSchemaValidationPipe`, with Nest's default 400 response (one `field: message` per problem).
 - OpenAPI: Swagger 12 converts the schemas; `zod-openapi` hoists schemas with `.meta({ id })` into named components, so the Orval client gets readable type names.
 - Shared packages compile to `dist` with `tsc`. NestJS is a peer dependency of shared packages and pinned once in the pnpm catalog, so there is exactly one copy of `@nestjs/core`.
-- Health checks are a small built-in controller instead of `@nestjs/terminus`, whose optional peer dependencies (Prisma, gRPC, TypeORM, …) bloated every image.
 
 ## Consequences
 

@@ -6,24 +6,21 @@ import {
   type INestApplication,
   Module,
   Post,
+  SerializeOptions,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { configureApp } from './bootstrap.js';
-import { ConfigKitModule } from './config/config.module.js';
-import { baseEnvSchema } from './config/env.schema.js';
-import { HealthKitModule } from './health/health.module.js';
-import type { ReadinessCheck } from './health/readiness-check.js';
-import { ProblemException } from './http/problem.js';
-import { LoggingModule } from './logging/logging.module.js';
 import { defineService } from './service.js';
 
 const EchoSchema = z.object({
   name: z.string().min(2),
   address: z.object({ city: z.string() }),
 });
+
+const PublicUserSchema = z.object({ id: z.string() });
 
 @Injectable()
 class GreetingService {
@@ -43,64 +40,27 @@ class DemoController {
     return { greeting: this.greetings.greet(body.name) };
   }
 
-  @Get('conflict')
-  conflict(): never {
-    throw new ProblemException({
-      status: 409,
-      type: '/errors/demo-conflict',
-      title: 'Demo conflict',
-      detail: 'Something already happened.',
-    });
-  }
-
-  @Get('boom')
-  boom(): never {
-    throw new Error('secret internals');
+  @Get('user')
+  @SerializeOptions({ schema: PublicUserSchema })
+  user() {
+    return { id: 'u1', passwordHash: 'secret' };
   }
 }
 
-@Injectable()
-class AlwaysUp implements ReadinessCheck {
-  readonly name = 'always-up';
-  async check(): Promise<void> {}
-}
-
-@Injectable()
-class AlwaysDown implements ReadinessCheck {
-  readonly name = 'always-down';
-  async check(): Promise<void> {
-    throw new Error('dependency unreachable');
-  }
-}
-
-async function createApp(checks: Array<new () => ReadinessCheck>): Promise<INestApplication> {
-  process.env.PORT ??= '4999';
-  process.env.NODE_ENV = 'test';
-  process.env.LOG_LEVEL = 'silent';
-
-  @Module({
-    imports: [
-      ConfigKitModule.forRoot(baseEnvSchema),
-      LoggingModule.forRoot('test'),
-      HealthKitModule.forRoot({ checks }),
-    ],
-    controllers: [DemoController],
-    providers: [GreetingService],
-  })
-  class TestAppModule {}
-
-  const moduleRef = await Test.createTestingModule({ imports: [TestAppModule] }).compile();
-  const app = moduleRef.createNestApplication({ bufferLogs: true });
-  configureApp(app, defineService({ name: 'test', title: 'Test API', module: TestAppModule }));
-  await app.init();
-  return app;
-}
+@Module({ controllers: [DemoController], providers: [GreetingService] })
+class TestAppModule {}
 
 describe('configureApp', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    app = await createApp([AlwaysUp]);
+    const moduleRef = await Test.createTestingModule({ imports: [TestAppModule] }).compile();
+    app = moduleRef.createNestApplication({ logger: false });
+    configureApp(
+      app,
+      defineService({ name: 'test', title: 'Test API', port: 0, module: TestAppModule }),
+    );
+    await app.init();
   });
 
   afterAll(async () => {
@@ -115,70 +75,22 @@ describe('configureApp', () => {
     expect(res.body).toEqual({ greeting: 'hello Quin' });
   });
 
-  it('turns schema failures into field-keyed problem+json', async () => {
+  it('rejects an invalid body with one `field: message` per problem', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/demo/echo')
       .send({ name: 'Q', address: {} })
       .expect(400);
-    expect(res.headers['content-type']).toMatch(/application\/problem\+json/);
-    expect(res.body).toMatchObject({
-      type: '/errors/validation',
-      status: 400,
-      instance: '/api/v1/demo/echo',
-    });
-    expect(Object.keys(res.body.errors).sort()).toEqual(['address.city', 'name']);
+    const fields = (res.body.message as string[]).map((message) => message.split(':')[0]);
+    expect(fields.sort()).toEqual(['address.city', 'name']);
   });
 
-  it('renders ProblemException with its own type', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/demo/conflict').expect(409);
-    expect(res.body).toMatchObject({ type: '/errors/demo-conflict', title: 'Demo conflict' });
+  it('strips response fields the schema does not list', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/demo/user').expect(200);
+    expect(res.body).toEqual({ id: 'u1' });
   });
 
-  it('hides internals of unexpected errors', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/demo/boom').expect(500);
-    expect(res.body.detail).toBe('An unexpected error occurred.');
-    expect(JSON.stringify(res.body)).not.toContain('secret internals');
-  });
-
-  it('returns problem+json 404 for unknown routes', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/nope').expect(404);
-    expect(res.body).toMatchObject({ type: '/errors/not-found', status: 404 });
-  });
-
-  it('keeps health probes outside the prefix', async () => {
-    await request(app.getHttpServer()).get('/health/live').expect(200, { status: 'ok' });
-    const ready = await request(app.getHttpServer()).get('/health/ready').expect(200);
-    expect(ready.body).toEqual({ status: 'ok', details: { 'always-up': { status: 'up' } } });
-  });
-
-  it('echoes or mints a request id', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/health/live')
-      .set('x-request-id', 'abc-123')
-      .expect(200);
-    expect(res.headers['x-request-id']).toBe('abc-123');
-  });
-
-  it('serves the OpenAPI document with the request schema', async () => {
+  it('serves the OpenAPI document', async () => {
     const res = await request(app.getHttpServer()).get('/docs/test/openapi.json').expect(200);
-    expect(res.body.paths).toHaveProperty('/api/v1/demo/echo');
     expect(res.body.paths['/api/v1/demo/echo'].post.operationId).toBe('echo');
-    expect(res.body.paths).not.toHaveProperty('/health/live');
-  });
-});
-
-describe('readiness', () => {
-  it('returns 503 when a readiness check fails', async () => {
-    const app = await createApp([AlwaysUp, AlwaysDown]);
-    try {
-      const res = await request(app.getHttpServer()).get('/health/ready').expect(503);
-      expect(res.body.status).toBe('error');
-      expect(res.body.details['always-down']).toEqual({
-        status: 'down',
-        message: 'dependency unreachable',
-      });
-    } finally {
-      await app.close();
-    }
   });
 });

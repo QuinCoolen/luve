@@ -38,6 +38,12 @@ async function outboxTopics(): Promise<
   return prisma.$queryRawUnsafe('SELECT topic, payload FROM nest_outbox.messages ORDER BY seq');
 }
 
+/** The distinct fields in `["email: Invalid email address", …]`, sorted. */
+function fieldsIn(res: Response): string[] {
+  const fields = (res.body.message as string[]).map((message) => message.split(':')[0]!);
+  return [...new Set(fields)].sort();
+}
+
 const alice = { email: 'Alice@Luve.dev', username: 'alice', password: 'Password123' };
 
 beforeAll(async () => {
@@ -50,9 +56,6 @@ beforeAll(async () => {
   });
 
   Object.assign(process.env, {
-    NODE_ENV: 'test',
-    LOG_LEVEL: 'silent',
-    PORT: '4001',
     DATABASE_URL: databaseUrl,
     // Never reached: the relay is off and the connection doesn't block boot.
     RABBITMQ_URL: 'amqp://guest:guest@127.0.0.1:1',
@@ -65,7 +68,7 @@ beforeAll(async () => {
   const { PrismaService } = await import('../src/prisma/prisma.service.js');
 
   const moduleRef = await Test.createTestingModule({ imports: [service.module] }).compile();
-  app = moduleRef.createNestApplication({ bufferLogs: true });
+  app = moduleRef.createNestApplication({ logger: false });
   configureApp(app, service);
   await app.init();
   prisma = app.get(PrismaService);
@@ -112,12 +115,12 @@ describe('registration', () => {
     expect(messages[0]!.payload.data).toMatchObject({ email: 'alice@luve.dev', username: 'alice' });
   });
 
-  it('refuses a taken email or username with field errors', async () => {
+  it('refuses a taken email or username, per field', async () => {
     const dup = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .send({ ...alice, email: 'ALICE@luve.dev' })
       .expect(409);
-    expect(Object.keys(dup.body.errors).sort()).toEqual(['email', 'username']);
+    expect(fieldsIn(dup)).toEqual(['email', 'username']);
   });
 
   it('reports every invalid field', async () => {
@@ -125,7 +128,7 @@ describe('registration', () => {
       .post('/api/v1/auth/register')
       .send({ email: 'nope', username: 'x', password: 'short' })
       .expect(400);
-    expect(Object.keys(bad.body.errors).sort()).toEqual(['email', 'password', 'username']);
+    expect(fieldsIn(bad)).toEqual(['email', 'password', 'username']);
   });
 });
 
@@ -139,8 +142,8 @@ describe('login and /me', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'nobody@luve.dev', password: 'Wrong12345' })
       .expect(401);
-    expect(wrong.body.type).toBe('/errors/invalid-credentials');
-    expect(unknown.body).toEqual({ ...wrong.body, instance: unknown.body.instance });
+    expect(wrong.body.message).toBe('The email or password is incorrect.');
+    expect(unknown.body).toEqual(wrong.body);
   });
 
   it('signs in and answers /me with the access cookie', async () => {
@@ -151,8 +154,7 @@ describe('login and /me', () => {
   });
 
   it('requires authentication for /me', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/auth/me').expect(401);
-    expect(res.body.type).toBe('/errors/unauthenticated');
+    await request(app.getHttpServer()).get('/api/v1/auth/me').expect(401);
   });
 });
 
@@ -185,7 +187,7 @@ describe('refresh token rotation', () => {
       .post('/api/v1/auth/refresh')
       .set('Cookie', `refresh=${stolen}`)
       .expect(401);
-    expect(replay.body.type).toBe('/errors/refresh-token-reused');
+    expect(replay.body.message).toMatch(/already used/);
 
     // …which also kills the legitimate user's current token.
     await request(app.getHttpServer())

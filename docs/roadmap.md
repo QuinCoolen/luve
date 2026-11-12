@@ -10,7 +10,7 @@ Each phase ships working code end to end (service + events + frontend) and gets 
 | 3 | **Bidding**: event-sourced aggregate, commands/queries, projector + relay, closing scheduler + sweeper, cancellation saga; web bid form via REST | planned |
 | 4 | **Realtime**: Socket.IO gateway fed by events; web moves from SignalR to socket.io-client | planned |
 | 5 | **Payments**: Stripe checkout (winner only) + signed webhooks | planned |
-| 6 | **Notifications, observability, hardening**: emails (Mailpit), OpenTelemetry traces across services (Grafana LGTM), Playwright E2E in CI | planned |
+| 6 | **Notifications, observability, hardening**: emails (Mailpit), OpenTelemetry traces across services (Grafana LGTM), Playwright E2E in CI; optionally health checks, structured logging and a shared error format | planned |
 | 7 | **Extras**: anti-sniping, projection rebuild, "auction state at time T" replay, k6 load test on a hot auction, Kubernetes (k3d + Helm) | planned |
 
 ## Every phase includes

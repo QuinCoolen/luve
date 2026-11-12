@@ -1,79 +1,51 @@
 import {
   type INestApplication,
+  Logger,
   StandardSchemaSerializerInterceptor,
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
-import { Logger } from 'nestjs-pino';
-import type { BaseEnv } from './config/env.schema.js';
-import { ProblemJsonFilter } from './http/problem-json.filter.js';
-import { applyRouting } from './http/routing.js';
-import { SchemaValidationException } from './http/schema-validation.exception.js';
 import { buildOpenApiDocument } from './openapi/document.js';
+import { applyRouting } from './routing.js';
 import type { ServiceDefinition } from './service.js';
 
 /**
- * Applies the cross-cutting HTTP setup shared by every service. Split from
- * `bootstrapService` so e2e tests can configure a `Test.createTestingModule`
- * app exactly like production.
+ * The HTTP setup every service shares. Split from `bootstrapService` so e2e
+ * tests can set up a `Test.createTestingModule` app the same way.
  */
 export function configureApp(app: INestApplication, service: ServiceDefinition): void {
-  const express = app as NestExpressApplication;
-
-  app.useLogger(app.get(Logger));
-
-  // Behind Traefik: trust private-network proxies so req.ip is the client's.
-  express.set('trust proxy', 'loopback, linklocal, uniquelocal');
-  // TLS (if any) terminates at the gateway, and locally everything is plain
-  // http://localhost:8000, so skip HSTS and the CSP https upgrade: they would
-  // make browsers rewrite Swagger UI's asset URLs to https.
-  app.use(
-    helmet({
-      hsts: false,
-      contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } },
-    }),
-  );
+  // Behind Traefik: read X-Forwarded-For so req.ip is the browser's address.
+  (app as NestExpressApplication).set('trust proxy', 'loopback, linklocal, uniquelocal');
+  // The JWT guard reads the access token from the `jwt` cookie.
   app.use(cookieParser());
 
   applyRouting(app, service.excludeFromPrefix);
 
-  // Zod (any Standard Schema) validation for @Body/@Query/@Param({ schema }).
-  app.useGlobalPipes(
-    new StandardSchemaValidationPipe({
-      exceptionFactory: (issues) => new SchemaValidationException(issues),
-    }),
-  );
-  // Response shaping for handlers annotated with @SerializeOptions({ schema }).
+  // Validates @Body/@Query/@Param({ schema }) with Zod. A failure is a 400
+  // whose `message` lists every problem as `field: message`.
+  app.useGlobalPipes(new StandardSchemaValidationPipe());
+  // Shapes responses with @SerializeOptions({ schema }): fields the schema
+  // doesn't list (e.g. passwordHash) never leave the service.
   app.useGlobalInterceptors(new StandardSchemaSerializerInterceptor(app.get(Reflector)));
-  app.useGlobalFilters(new ProblemJsonFilter(app.get(HttpAdapterHost)));
 
   // Swagger UI at /docs/<name>, raw spec at /docs/<name>/openapi.json.
-  const document = buildOpenApiDocument(app, service);
-  SwaggerModule.setup(`docs/${service.name}`, app, document, {
+  SwaggerModule.setup(`docs/${service.name}`, app, buildOpenApiDocument(app, service), {
     jsonDocumentUrl: `docs/${service.name}/openapi.json`,
   });
-
-  app.enableShutdownHooks();
 }
 
-/** Creates, configures and starts a service on `PORT`. */
+/** Creates, configures and starts a service. */
 export async function bootstrapService(service: ServiceDefinition): Promise<INestApplication> {
-  const app = await NestFactory.create(service.module, {
-    bufferLogs: true,
-    ...service.nestOptions,
-  });
+  const app = await NestFactory.create(service.module);
   configureApp(app, service);
 
-  const config: ConfigService<BaseEnv, true> = app.get(ConfigService);
-  const port = config.get('PORT', { infer: true });
+  const port = Number(process.env.PORT ?? service.port);
   await app.listen(port);
-  app
-    .get(Logger)
-    .log(`${service.name} listening on http://localhost:${port} (docs: /docs/${service.name})`);
+  new Logger(service.name).log(
+    `Listening on http://localhost:${port} (docs: /docs/${service.name})`,
+  );
   return app;
 }

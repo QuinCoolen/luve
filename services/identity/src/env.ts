@@ -1,7 +1,7 @@
-import { baseEnvSchema } from '@luve/service-kit';
 import { z } from 'zod';
 
-export const envSchema = baseEnvSchema.extend({
+/** Identity's environment, checked once at startup (see .env.example). */
+export const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   RABBITMQ_URL: z.string().min(1),
   OUTBOX_RELAY: z.enum(['on', 'off']).default('on'),

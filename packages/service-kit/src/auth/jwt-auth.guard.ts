@@ -1,7 +1,11 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { errors } from 'jose';
-import { ProblemException } from '../http/problem.js';
 import { AccessTokenVerifier } from './access-token.verifier.js';
 import { ACCESS_TOKEN_COOKIE, type AuthUser } from './auth.constants.js';
 
@@ -9,8 +13,8 @@ export type AuthenticatedRequest = Request & { user?: AuthUser };
 
 /**
  * Accepts the access token from the `jwt` cookie (browsers) or an
- * `Authorization: Bearer` header (tools, other services). An expired token
- * gets its own problem type, so the web client knows to refresh and retry.
+ * `Authorization: Bearer` header (tools, other services). Any failure is a
+ * 401; the web client answers it by refreshing the session once and retrying.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -20,11 +24,7 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = extractToken(request);
     if (!token) {
-      throw unauthorized(
-        '/errors/unauthenticated',
-        'Authentication required',
-        'Log in to continue.',
-      );
+      throw new UnauthorizedException('Log in to continue.');
     }
 
     try {
@@ -32,13 +32,9 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     } catch (error) {
       if (error instanceof errors.JWTExpired) {
-        throw unauthorized(
-          '/errors/token-expired',
-          'Access token expired',
-          'Refresh the session and retry.',
-        );
+        throw new UnauthorizedException('Access token expired.');
       }
-      throw unauthorized('/errors/invalid-token', 'Invalid access token', 'Log in again.');
+      throw new UnauthorizedException('Invalid access token.');
     }
   }
 }
@@ -50,8 +46,4 @@ function extractToken(request: Request): string | undefined {
   }
   const header = request.headers.authorization;
   return header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined;
-}
-
-function unauthorized(type: string, title: string, detail: string): ProblemException {
-  return new ProblemException({ status: 401, type, title, detail });
 }

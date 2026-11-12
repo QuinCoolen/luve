@@ -14,7 +14,7 @@ export const EnvelopeMetaSchema = z.object({
   occurredAt: z.iso.datetime({ offset: true }),
   /** The service that published it. */
   producer: z.string().min(1),
-  /** The request or event chain this belongs to (the originating request id). */
+  /** Id shared by every event in one chain of reactions. */
   correlationId: z.string().min(1).optional(),
   /** The event or command that directly caused this one. */
   causationId: z.string().min(1).optional(),

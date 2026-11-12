@@ -1,6 +1,6 @@
 import type { ApiError } from "@/api/mutator/axios";
 
-/** Renders the problem+json messages for one form field. */
+/** Renders the server's error messages for one form field. */
 export function FieldErrors({ error, field }: { error: ApiError | null; field: string }) {
   const messages = error?.fieldErrors(field) ?? [];
   if (messages.length === 0) return null;

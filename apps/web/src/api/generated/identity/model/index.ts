@@ -8,8 +8,6 @@
 
 export * from './loginRequest';
 export * from './me';
-export * from './problemDetails';
-export * from './problemDetailsErrors';
 export * from './publicProfile';
 export * from './registerRequest';
 export * from './updateProfileRequest';

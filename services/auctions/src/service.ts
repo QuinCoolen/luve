@@ -5,5 +5,6 @@ export const service = defineService({
   name: 'auctions',
   title: 'Luve Auctions API',
   description: 'Auction listings and their lifecycle.',
+  port: 4002,
   module: AppModule,
 });

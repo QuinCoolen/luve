@@ -14,18 +14,16 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint src",
     "test": "vitest run",
-    "openapi:export": "node --env-file=.env.example dist/openapi.js"
+    "openapi:export": "node dist/openapi.js"
   },
   "dependencies": {
     "@luve/service-kit": "workspace:*",
     "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
     "@nestjs/swagger": "catalog:",
     "reflect-metadata": "catalog:",
-    "rxjs": "catalog:",
-    "zod": "catalog:"
+    "rxjs": "catalog:"
   },
   "devDependencies": {
     "@luve/tsconfig": "workspace:*",

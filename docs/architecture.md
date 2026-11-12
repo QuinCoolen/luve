@@ -18,7 +18,7 @@ Rules every service follows:
 - **One database per service.** No service reads another service's tables. If a service needs someone else's data (e.g. a seller's username), it keeps a local copy fed by events.
 - **No synchronous calls between services on the hot path.** Placing a bid never waits on another service.
 - **Money is integer euro cents.** IDs are UUIDv7.
-- **Errors are `application/problem+json`** (RFC 9457) everywhere, built by `@luve/service-kit`.
+- **Errors use NestJS's default shape** `{ statusCode, message, error }`. Validation errors list one `field: message` per problem, so forms can show them next to the right input.
 
 ## Gateway
 
@@ -119,7 +119,7 @@ Only the winner can pay. Payments checks this against its own copy of `bidding-c
 
 ## Shared code
 
-- **`@luve/service-kit`**: every service boots with `bootstrapService(service)`, which provides helmet, cookies, `/api/v1` routing, Zod validation through Nest's Standard Schema pipe, problem+json errors, pino logging with request ids, `/health/live` + `/health/ready`, and Swagger at `/docs/<name>`. `exportOpenApi` writes `openapi.json` without connecting to anything.
+- **`@luve/service-kit`**: deliberately small. Every service boots with `bootstrapService(service)`, which sets up cookies, `/api/v1` routing, Zod validation and response shaping through Nest's Standard Schema support, and Swagger at `/docs/<name>`. `exportOpenApi` writes `openapi.json` without connecting to anything. Production plumbing (health checks, structured logging, a shared error format) is left out on purpose and can be added later.
 - **`@luve/service-kit` auth**: `JwtAuthModule` + `@Auth()` / `@CurrentUser()` verify identity's access tokens locally, against its JWKS.
 - **`@luve/contracts`**: integration-event schemas (`defineEvent('identity.user-registered.v1', zodSchema)`) with JSON fixtures that producers and consumers both test against.
 - **`@luve/messaging`**: `MessagingModule.forRoot({ service, prisma })` wires RabbitMQ and the outbox; `IntegrationEvents.stage(tx, Contract, data)` validates an event against its contract and adds it to the outbox inside the caller's transaction. Consumers and the inbox follow in Phase 2.

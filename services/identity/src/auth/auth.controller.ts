@@ -1,14 +1,7 @@
-import {
-  ApiProblem,
-  Auth,
-  type AuthUser,
-  CurrentUser,
-  ProblemException,
-  REFRESH_TOKEN_COOKIE,
-  RequestId,
-} from '@luve/service-kit';
+import { Auth, type AuthUser, CurrentUser, REFRESH_TOKEN_COOKIE } from '@luve/service-kit';
 import {
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -18,11 +11,18 @@ import {
   Res,
   SerializeOptions,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AccessTokens } from '../keys/access-tokens.js';
 import { AuthCookies } from './auth-cookies.js';
-import { AuthProblems } from './auth.problems.js';
 import {
   type LoginRequest,
   LoginRequestSchema,
@@ -33,7 +33,7 @@ import {
   toMe,
 } from './auth.schemas.js';
 import { AuthService, type SignedIn } from './auth.service.js';
-import type { ClientInfo } from './sessions.js';
+import { type ClientInfo, invalidRefreshToken } from './sessions.js';
 
 function clientInfo(req: Request): ClientInfo {
   return { userAgent: req.headers['user-agent'], ip: req.ip };
@@ -55,15 +55,14 @@ export class AuthController {
   @Post('register')
   @SerializeOptions({ schema: MeSchema })
   @ApiCreatedResponse({ description: 'Account created and signed in', standardSchema: MeSchema })
-  @ApiProblem(400, 'Validation failed')
-  @ApiProblem(409, 'Email or username already taken')
+  @ApiBadRequestResponse({ description: 'Validation failed' })
+  @ApiConflictResponse({ description: 'Email or username already taken' })
   async register(
     @Body({ schema: RegisterRequestSchema }) body: RegisterRequest,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @RequestId() requestId: string,
   ): Promise<Me> {
-    const signedIn = await this.auth.register(body, clientInfo(req), requestId);
+    const signedIn = await this.auth.register(body, clientInfo(req));
     return this.signIn(res, signedIn);
   }
 
@@ -71,7 +70,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @SerializeOptions({ schema: MeSchema })
   @ApiOkResponse({ description: 'Signed in', standardSchema: MeSchema })
-  @ApiProblem(401, 'Invalid credentials')
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   async login(
     @Body({ schema: LoginRequestSchema }) body: LoginRequest,
     @Req() req: Request,
@@ -85,23 +84,22 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'New access and refresh cookies set' })
-  @ApiProblem(401, 'Missing, invalid, stale or reused refresh token')
+  @ApiUnauthorizedResponse({ description: 'Missing, invalid, expired or reused refresh token' })
+  @ApiConflictResponse({ description: 'Another request rotated this token a moment ago' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     const token = refreshCookie(req);
     if (!token) {
       this.cookies.clear(res);
-      throw AuthProblems.invalidRefreshToken();
+      throw invalidRefreshToken();
     }
     try {
       const { accessToken, refresh } = await this.auth.refresh(token, clientInfo(req));
       this.cookies.setAccessToken(res, accessToken, this.accessTokens.ttlSeconds);
       this.cookies.setRefreshToken(res, refresh);
     } catch (error) {
-      // A stale token means another request already rotated it: the browser
-      // holds the new cookie, so leave the cookies alone.
-      if (!(
-        error instanceof ProblemException && error.problem.type === '/errors/refresh-token-stale'
-      )) {
+      // A conflict means another request already rotated the token: the
+      // browser holds the new cookie, so leave the cookies alone.
+      if (!(error instanceof ConflictException)) {
         this.cookies.clear(res);
       }
       throw error;

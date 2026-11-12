@@ -1,4 +1,4 @@
-import { AuthProblems } from './auth.problems.js';
+import { ConflictException } from '@nestjs/common';
 
 /**
  * Runs `work` and turns a unique-constraint violation (Prisma P2002), which a
@@ -10,7 +10,7 @@ export async function withUniqueGuard<T>(work: () => Promise<T>): Promise<T> {
     return await work();
   } catch (error) {
     if ((error as { code?: unknown } | null)?.code === 'P2002') {
-      throw AuthProblems.taken({ email: 'This email or username is already taken.' });
+      throw new ConflictException(['email: This email or username is already taken.']);
     }
     throw error;
   }

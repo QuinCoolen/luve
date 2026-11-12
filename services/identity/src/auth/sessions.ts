@@ -1,10 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v7 as uuidv7 } from 'uuid';
 import type { Env } from '../env.js';
 import { PrismaService, type PrismaTx } from '../prisma/prisma.service.js';
-import { AuthProblems } from './auth.problems.js';
 
 export interface ClientInfo {
   userAgent?: string | undefined;
@@ -14,6 +13,17 @@ export interface ClientInfo {
 export interface IssuedRefreshToken {
   token: string;
   expiresAt: Date;
+}
+
+export function invalidRefreshToken(): UnauthorizedException {
+  return new UnauthorizedException('Invalid refresh token. Log in again.');
+}
+
+/** Two tabs refreshed at once: retry with the cookies the other request set. */
+function refreshTokenStale(): ConflictException {
+  return new ConflictException(
+    'This session was refreshed a moment ago. Retry with the current cookies.',
+  );
 }
 
 function hashToken(token: string): string {
@@ -29,7 +39,7 @@ function hashToken(token: string): string {
  * - A revoked token presented again means it was copied: the whole family is
  *   revoked, logging out both the thief and the victim. The exception is a
  *   token rotated moments ago (two tabs refreshing at once), which only gets
- *   a "stale" answer.
+ *   a 409 "retry" answer.
  */
 @Injectable()
 export class Sessions {
@@ -63,7 +73,7 @@ export class Sessions {
       include: { user: { select: { id: true, username: true } } },
     });
     if (!session) {
-      throw AuthProblems.invalidRefreshToken();
+      throw invalidRefreshToken();
     }
 
     const now = Date.now();
@@ -71,17 +81,18 @@ export class Sessions {
       const rotatedRecently =
         session.replacedById !== null && now - session.revokedAt.getTime() < this.reuseGraceMs;
       if (rotatedRecently) {
-        throw AuthProblems.refreshTokenStale();
+        throw refreshTokenStale();
       }
       await this.revokeFamily(session.familyId);
       this.logger.warn(
-        { userId: session.userId, familyId: session.familyId },
-        'Revoked refresh token reused; revoked the whole session family',
+        `Revoked refresh token reused by user ${session.userId}: ended session family ${session.familyId}`,
       );
-      throw AuthProblems.refreshTokenReused();
+      throw new UnauthorizedException(
+        'This refresh token was already used, so the session was ended for your safety. Log in again.',
+      );
     }
     if (session.expiresAt.getTime() <= now) {
-      throw AuthProblems.invalidRefreshToken();
+      throw invalidRefreshToken();
     }
 
     const refresh = await this.prisma.$transaction(async (tx) => {
@@ -93,7 +104,7 @@ export class Sessions {
         data: { revokedAt: new Date(now), replacedById: next.sessionId },
       });
       if (count === 0) {
-        throw AuthProblems.refreshTokenStale();
+        throw refreshTokenStale();
       }
       return next;
     });

@@ -2,7 +2,7 @@
   "name": "@luve/service-kit",
   "version": "0.0.0",
   "private": true,
-  "description": "Shared NestJS plumbing for every Luve service: bootstrap, env validation, problem+json errors, logging, health checks and OpenAPI.",
+  "description": "Shared NestJS setup for every Luve service: bootstrap, Zod validation, JWT auth and Swagger/OpenAPI.",
   "type": "module",
   "exports": {
     ".": {
@@ -22,17 +22,11 @@
   },
   "dependencies": {
     "cookie-parser": "catalog:",
-    "helmet": "catalog:",
     "jose": "catalog:",
-    "nestjs-pino": "catalog:",
-    "pino": "catalog:",
-    "pino-http": "catalog:",
-    "pino-pretty": "catalog:",
     "zod-openapi": "catalog:"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.0",
-    "@nestjs/config": "^12.0.0",
     "@nestjs/core": "^12.0.0",
     "@nestjs/platform-express": "^12.0.0",
     "@nestjs/swagger": "^12.0.0",
@@ -43,7 +37,6 @@
   "devDependencies": {
     "@luve/tsconfig": "workspace:*",
     "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
     "@nestjs/platform-express": "catalog:",
     "@nestjs/swagger": "catalog:",

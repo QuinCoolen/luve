@@ -113,9 +113,11 @@ export default function Register() {
               </button>
             </div>
             {confirmError && <p className="w-full text-sm text-red-500">{confirmError}</p>}
-            {error && Object.keys(error.errors).length === 0 && (
-              <p className="w-full text-sm text-red-500">{error.detail}</p>
-            )}
+            {error?.generalErrors().map((message) => (
+              <p key={message} className="w-full text-sm text-red-500">
+                {message}
+              </p>
+            ))}
             <Button className="place-self-end" type="submit" disabled={register.isPending}>
               Register
             </Button>

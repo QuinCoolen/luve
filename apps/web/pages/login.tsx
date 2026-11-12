@@ -58,9 +58,6 @@ export default function Login() {
     }
   }
 
-  const generalError =
-    error && Object.keys(error.errors).length === 0 ? error.detail : null;
-
   return (
     <div className="flex flex-col items-center justify-center py-36">
       <Card className="w-96">
@@ -69,7 +66,11 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="flex flex-col items-center justify-center gap-4">
-            {generalError && <p className="text-red-500">{generalError}</p>}
+            {error?.generalErrors().map((message) => (
+              <p key={message} className="text-red-500">
+                {message}
+              </p>
+            ))}
             <Input type="email" placeholder="Email" name="email" autoComplete="email" required />
             <FieldErrors error={error} field="email" />
             <Input

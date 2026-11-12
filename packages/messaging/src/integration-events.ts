@@ -12,7 +12,7 @@ export interface StageOptions {
    * order (e.g. the user or auction id the event is about).
    */
   key?: string;
-  /** The request id (or upstream correlation id) this change came from. */
+  /** Id shared by every event in one chain of reactions (optional). */
   correlationId?: string;
   /** The event or command that directly caused this event. */
   causationId?: string;

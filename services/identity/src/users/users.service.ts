@@ -28,11 +28,7 @@ export class UsersService {
   }
 
   /** Updates the profile and publishes `user-updated` in the same transaction. */
-  async update(
-    userId: string,
-    changes: UpdateProfileRequest,
-    correlationId: string,
-  ): Promise<UserRecord> {
+  async update(userId: string, changes: UpdateProfileRequest): Promise<UserRecord> {
     await this.auth.me(userId);
     await this.auth.assertAvailable(changes, userId);
 
@@ -50,7 +46,7 @@ export class UsersService {
           tx,
           UserUpdatedV1,
           { userId: updated.id, email: updated.email, username: updated.username },
-          { key: updated.id, correlationId },
+          { key: updated.id },
         );
         return updated;
       }),
@@ -60,13 +56,13 @@ export class UsersService {
   }
 
   /** Deletes the account (its sessions cascade) and publishes `user-deleted`. */
-  async delete(userId: string, correlationId: string): Promise<void> {
+  async delete(userId: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const { count } = await tx.user.deleteMany({ where: { id: userId } });
       if (count === 0) {
         return;
       }
-      await this.events.stage(tx, UserDeletedV1, { userId }, { key: userId, correlationId });
+      await this.events.stage(tx, UserDeletedV1, { userId }, { key: userId });
     });
     this.events.flush();
   }

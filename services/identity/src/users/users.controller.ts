@@ -1,4 +1,4 @@
-import { ApiProblem, Auth, type AuthUser, CurrentUser, RequestId } from '@luve/service-kit';
+import { Auth, type AuthUser, CurrentUser } from '@luve/service-kit';
 import {
   Body,
   Controller,
@@ -11,7 +11,14 @@ import {
   Res,
   SerializeOptions,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AuthCookies } from '../auth/auth-cookies.js';
 import { type Me, MeSchema, toMe } from '../auth/auth.schemas.js';
@@ -39,15 +46,14 @@ export class UsersController {
   @Auth()
   @SerializeOptions({ schema: MeSchema })
   @ApiOkResponse({ description: 'Profile updated', standardSchema: MeSchema })
-  @ApiProblem(400, 'Validation failed')
-  @ApiProblem(409, 'Email or username already taken')
+  @ApiBadRequestResponse({ description: 'Validation failed' })
+  @ApiConflictResponse({ description: 'Email or username already taken' })
   async updateMe(
     @CurrentUser() caller: AuthUser,
     @Body({ schema: UpdateProfileRequestSchema }) body: UpdateProfileRequest,
     @Res({ passthrough: true }) res: Response,
-    @RequestId() requestId: string,
   ): Promise<Me> {
-    const user = await this.users.update(caller.id, body, requestId);
+    const user = await this.users.update(caller.id, body);
     const accessToken = await this.accessTokens.issue(user);
     this.cookies.setAccessToken(res, accessToken, this.accessTokens.ttlSeconds);
     return toMe(user);
@@ -60,16 +66,15 @@ export class UsersController {
   async deleteMe(
     @CurrentUser() caller: AuthUser,
     @Res({ passthrough: true }) res: Response,
-    @RequestId() requestId: string,
   ): Promise<void> {
-    await this.users.delete(caller.id, requestId);
+    await this.users.delete(caller.id);
     this.cookies.clear(res);
   }
 
   @Get(':id')
   @SerializeOptions({ schema: PublicProfileSchema })
   @ApiOkResponse({ description: 'Public profile', standardSchema: PublicProfileSchema })
-  @ApiProblem(404, 'No such user')
+  @ApiNotFoundResponse({ description: 'No such user' })
   async getProfile(@Param('id', { schema: UserIdSchema }) id: string): Promise<PublicProfile> {
     const user = await this.users.findPublic(id);
     return { id: user.id, username: user.username, createdAt: user.createdAt.toISOString() };

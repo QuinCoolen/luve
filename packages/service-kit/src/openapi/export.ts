@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
-import { applyRouting } from '../http/routing.js';
+import { applyRouting } from '../routing.js';
 import type { ServiceDefinition } from '../service.js';
 import { buildOpenApiDocument } from './document.js';
 
@@ -10,8 +10,8 @@ import { buildOpenApiDocument } from './document.js';
  * `outFile` and exits. This file is the contract Orval generates the web
  * client from; CI fails when it's stale.
  *
- * Env validation still runs, so the service's `openapi:export` script loads
- * `.env.example`.
+ * Modules still load, so a service that validates its environment at startup
+ * (identity) runs its `openapi:export` script with `--env-file=.env.example`.
  */
 export async function exportOpenApi(
   service: ServiceDefinition,

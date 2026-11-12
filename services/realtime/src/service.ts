@@ -5,5 +5,6 @@ export const service = defineService({
   name: 'realtime',
   title: 'Luve Realtime API',
   description: 'Socket.IO push of bidding and auction events.',
+  port: 4005,
   module: AppModule,
 });

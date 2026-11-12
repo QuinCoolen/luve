@@ -18,59 +18,58 @@ export const AXIOS_INSTANCE = Axios.create({
   withCredentials: true,
 });
 
-/** RFC 9457 problem details: the error body every Luve service returns. */
-export interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail: string;
-  instance: string;
-  errors?: Record<string, string[]>;
+/**
+ * NestJS's default error body: `{ statusCode, message, error }`. `message` is
+ * one string, or a list for validation errors, where each entry reads
+ * `field: what's wrong` (e.g. `email: Invalid email address`).
+ */
+interface NestErrorBody {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
 }
 
-/** Thrown for every non-2xx response, parsed from problem+json. */
+const FIELD_MESSAGE = /^([\w.]+): (.+)$/;
+
+/** Thrown for every non-2xx response. */
 export class ApiError extends Error {
   readonly status: number;
-  readonly type: string;
-  readonly title: string;
-  readonly detail: string;
-  readonly errors: Record<string, string[]>;
+  readonly messages: string[];
 
-  constructor(problem: ProblemDetails) {
-    super(problem.detail || problem.title);
+  constructor(status: number, messages: string[]) {
+    super(messages.join(" ") || `Request failed with status ${status}`);
     this.name = "ApiError";
-    this.status = problem.status;
-    this.type = problem.type;
-    this.title = problem.title;
-    this.detail = problem.detail;
-    this.errors = problem.errors ?? {};
+    this.status = status;
+    this.messages = messages;
   }
 
-  /** Messages for one field (e.g. `email`), for showing next to the input. */
+  /** Messages about one field (`email: …`), for showing next to that input. */
   fieldErrors(field: string): string[] {
-    return this.errors[field] ?? [];
+    return this.messages.flatMap((message) => {
+      const match = FIELD_MESSAGE.exec(message);
+      return match?.[1] === field ? [match[2]!] : [];
+    });
+  }
+
+  /** Messages that aren't about one field, e.g. "The email or password is incorrect." */
+  generalErrors(): string[] {
+    return this.messages.filter((message) => !FIELD_MESSAGE.test(message));
   }
 }
 
-function isProblemDetails(value: unknown): value is ProblemDetails {
-  return typeof value === "object" && value !== null && "status" in value && "title" in value;
+function isNestErrorBody(value: unknown): value is NestErrorBody {
+  return typeof value === "object" && value !== null && "statusCode" in value && "message" in value;
 }
 
 function toApiError(error: AxiosError): unknown {
-  const data = error.response?.data;
-  if (isProblemDetails(data)) {
-    return new ApiError(data);
+  if (!error.response) {
+    return error;
   }
-  if (error.response) {
-    return new ApiError({
-      type: "/errors/http",
-      title: error.response.statusText || "Request failed",
-      status: error.response.status,
-      detail: error.message,
-      instance: error.config?.url ?? "",
-    });
-  }
-  return error;
+  const data = error.response.data;
+  const messages = isNestErrorBody(data)
+    ? [data.message].flat()
+    : [error.response.statusText || "Request failed"];
+  return new ApiError(error.response.status, messages);
 }
 
 // --- silent refresh ---------------------------------------------------------
@@ -87,9 +86,9 @@ export function refreshSession(): Promise<void> {
   refreshing ??= AXIOS_INSTANCE.post(REFRESH_URL)
     .then(() => undefined)
     .catch((error: unknown) => {
-      // Another tab rotated the token a moment ago: the browser already has
-      // the new cookies, so the session is fine.
-      if (error instanceof ApiError && error.type === "/errors/refresh-token-stale") {
+      // 409: another tab rotated the token a moment ago. The browser already
+      // has the new cookies, so the session is fine.
+      if (error instanceof ApiError && error.status === 409) {
         return undefined;
       }
       throw error;

@@ -14,7 +14,7 @@ function isZodSchema(schema: unknown): boolean {
 /**
  * Converts Zod schemas with `zod-openapi`, which hoists every schema that has
  * `.meta({ id: 'Name' })` into `components.schemas`. Named components give the
- * Orval-generated client readable type names (`Me`, `ProblemDetails`, …)
+ * Orval-generated client readable type names (`Me`, `PublicProfile`, …)
  * instead of `PostApiV1AuthLogin200`. Non-Zod schemas fall back to Nest's
  * native Standard JSON Schema conversion.
  */

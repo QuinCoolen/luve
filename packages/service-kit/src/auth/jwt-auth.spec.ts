@@ -6,9 +6,6 @@ import { exportJWK, generateKeyPair, type JWK, SignJWT } from 'jose';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configureApp } from '../bootstrap.js';
-import { ConfigKitModule } from '../config/config.module.js';
-import { baseEnvSchema } from '../config/env.schema.js';
-import { LoggingModule } from '../logging/logging.module.js';
 import { defineService } from '../service.js';
 import type { AuthUser, JwtAuthOptions } from './auth.constants.js';
 import { Auth, CurrentUser } from './decorators.js';
@@ -45,14 +42,8 @@ async function sign(
 }
 
 async function createApp(jwks: JwtAuthOptions['jwks']): Promise<INestApplication> {
-  process.env.PORT ??= '4999';
-  process.env.NODE_ENV = 'test';
-  process.env.LOG_LEVEL = 'silent';
-
   @Module({
     imports: [
-      ConfigKitModule.forRoot(baseEnvSchema),
-      LoggingModule.forRoot('test'),
       JwtAuthModule.forRootAsync({
         useFactory: () => ({ issuer: ISSUER, audience: AUDIENCE, jwks }),
       }),
@@ -62,8 +53,8 @@ async function createApp(jwks: JwtAuthOptions['jwks']): Promise<INestApplication
   class TestAppModule {}
 
   const moduleRef = await Test.createTestingModule({ imports: [TestAppModule] }).compile();
-  const app = moduleRef.createNestApplication({ bufferLogs: true });
-  configureApp(app, defineService({ name: 'test', title: 'Test', module: TestAppModule }));
+  const app = moduleRef.createNestApplication({ logger: false });
+  configureApp(app, defineService({ name: 'test', title: 'Test', port: 0, module: TestAppModule }));
   await app.init();
   return app;
 }
@@ -108,10 +99,10 @@ describe('JWT auth', () => {
 
     it('rejects a missing token', async () => {
       const res = await request(app.getHttpServer()).get('/api/v1/whoami').expect(401);
-      expect(res.body.type).toBe('/errors/unauthenticated');
+      expect(res.body.message).toBe('Log in to continue.');
     });
 
-    it('marks expired tokens so clients know to refresh', async () => {
+    it('rejects an expired token', async () => {
       const token = await sign(keys, 'k1', user, {
         expiresIn: Math.floor(Date.now() / 1000) - 60,
       });
@@ -119,7 +110,7 @@ describe('JWT auth', () => {
         .get('/api/v1/whoami')
         .set('Cookie', `jwt=${token}`)
         .expect(401);
-      expect(res.body.type).toBe('/errors/token-expired');
+      expect(res.body.message).toBe('Access token expired.');
     });
 
     it('rejects a token from another issuer', async () => {
@@ -128,7 +119,7 @@ describe('JWT auth', () => {
         .get('/api/v1/whoami')
         .set('Cookie', `jwt=${token}`)
         .expect(401);
-      expect(res.body.type).toBe('/errors/invalid-token');
+      expect(res.body.message).toBe('Invalid access token.');
     });
 
     it('rejects a token signed with an unknown key', async () => {

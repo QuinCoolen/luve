@@ -31,7 +31,7 @@ flowchart LR
 | [`services/bidding`](services/bidding) | bidding, **event-sourced** with [`@ocoda/event-sourcing`](https://github.com/ocoda/event-sourcing) |
 | [`services/payments`](services/payments) | Stripe checkout for won auctions |
 | [`services/realtime`](services/realtime) | Socket.IO push of bids and status changes |
-| [`packages/service-kit`](packages/service-kit) | shared Nest plumbing: bootstrap, env validation, problem+json errors, logging, health, OpenAPI |
+| [`packages/service-kit`](packages/service-kit) | shared Nest setup: bootstrap, Zod validation, JWT guard, Swagger/OpenAPI |
 | [`infra/`](infra) | Postgres init, RabbitMQ definitions, Traefik routes |
 | [`docs/`](docs) | [architecture](docs/architecture.md), [roadmap](docs/roadmap.md), [decision records](docs/adr) |
 

@@ -21,7 +21,7 @@ Accounts, sessions and access-token signing. The only service that knows passwor
 - **Access token**: Ed25519 JWT `{ sub, username }`, 15 minutes, httpOnly cookie `jwt` (path `/`).
 - **Refresh token**: 32 random bytes, stored only as a SHA-256 hash, 30 days (sliding), httpOnly cookie `refresh` scoped to `/api/v1/auth`.
 - **Rotation**: every refresh revokes the presented token and issues a new one in the same *family*. The swap is a conditional update, so two concurrent refreshes can't both win.
-- **Reuse detection**: presenting a revoked token again revokes the whole family (attacker and victim are both logged out). A token rotated less than `REFRESH_REUSE_GRACE_SECONDS` ago only gets `401 refresh-token-stale`: that's two tabs refreshing at once, not theft.
+- **Reuse detection**: presenting a revoked token again revokes the whole family (attacker and victim are both logged out). A token rotated less than `REFRESH_REUSE_GRACE_SECONDS` ago only gets a `409` ("retry with the current cookies"): that's two tabs refreshing at once, not theft.
 
 ## Events
 
